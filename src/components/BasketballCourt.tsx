@@ -1,5 +1,5 @@
 "use client";
-
+import { PlayerNode } from './PlayerNode';
 import React, { useCallback } from 'react';
 import ReactFlow, { 
   Background, 
@@ -11,6 +11,10 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import { COURT_WIDTH, COURT_HEIGHT, STARTING_POSITIONS } from '@/src/lib/constants';
+
+const nodeTypes = {
+  player: PlayerNode,
+};
 
 const initialNodes = [
   {
@@ -32,6 +36,16 @@ const initialNodes = [
 
     },
   },
+  {
+    id: 'player-1',
+    type: 'player',
+    position: { x: 200, y: 200 },
+    data: { 
+      name: 'LeBron James', 
+      number: 23, 
+      color: '#552583' 
+    },
+  },
 ];
 
 const initialEdges: any[] = [];
@@ -44,6 +58,7 @@ export default function BasketballCourt() {
     <div className="relative w-full h-[600px] bg-[#1a1a1a] rounded-xl overflow-hidden border-2 border-zinc-800 shadow-2xl">
       <ReactFlow
         nodes={nodes}
+        nodeTypes={nodeTypes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -70,6 +85,7 @@ export default function BasketballCourt() {
             width: '100%',
             height: '100%',
             filter: 'invert(1) brightness(0.8)', 
+            transform: 'rotate(0deg)',
           }}
         />
 

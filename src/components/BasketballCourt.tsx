@@ -1,6 +1,7 @@
 "use client";
 import { PlayerNode } from './PlayerNode';
 import React, { useCallback } from 'react';
+import { useCopilotAction } from "@copilotkit/react-core";
 import ReactFlow, { 
   Background, 
   Controls, 
@@ -9,8 +10,8 @@ import ReactFlow, {
   Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-
 import { COURT_WIDTH, COURT_HEIGHT, STARTING_POSITIONS } from '@/src/lib/constants';
+import { useFrontendTool, useCopilotReadable } from "@copilotkit/react-core";
 
 const nodeTypes = {
   player: PlayerNode,
@@ -53,6 +54,57 @@ const initialEdges: any[] = [];
 export default function BasketballCourt() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  
+  useCopilotReadable({
+  description: "The current positions of all players and the ball on the court",
+  value: nodes,
+});
+
+  useCopilotAction({
+  name: "updatePlayerPosition",
+  description: "Update the position of a player or the ball on the court",
+  parameters: [
+    { name: "id", type: "string", description: "The ID of the player to move (e.g., 'p1', 'ball')" },
+    { name: "x", type: "number", description: "The new X coordinate (0-800)" },
+    { name: "y", type: "number", description: "The new Y coordinate (0-500)" },
+  ],
+  handler: ({ id, x, y }) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, position: { x, y } };
+        }
+        return node;
+      })
+    );
+  },
+});
+
+useFrontendTool({
+  name: "updatePlayerPositions",
+  description: "Moves players or the ball on the court to new coordinates",
+  parameters: [
+    {
+      name: "movements",
+      type: "object[]",
+      description: "An array of player movements",
+      attributes: [ // בגרסה החדשה לעיתים משתמשים ב-attributes עבור אובייקטים
+        { name: "id", type: "string", description: "The ID (p1, p2... ball)" },
+        { name: "x", type: "number" },
+        { name: "y", type: "number" }
+      ],
+      required: true,
+    },
+  ],
+  handler: async ({ movements }) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        const move = movements.find((m: any) => m.id === node.id);
+        return move ? { ...node, position: { x: move.x, y: move.y } } : node;
+      })
+    );
+  },
+});
 
   return (
     <div className="relative w-full h-[600px] bg-[#1a1a1a] rounded-xl overflow-hidden border-2 border-zinc-800 shadow-2xl">

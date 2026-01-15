@@ -15,22 +15,21 @@ import { COURT_WIDTH, COURT_HEIGHT, STARTING_POSITIONS } from '@/src/lib/constan
 const initialNodes = [
   {
     id: 'ball',
-    type: 'default',
+    type: 'input',
     data: { label: '🏀' },
     position: { x: COURT_WIDTH / 2 - 20, y: COURT_HEIGHT - 100 },
-    dragHandle: '.drag-handle', 
+    draggable: true,
     style: { 
       borderRadius: '50%', 
-      width: 40, 
-      height: 40, 
+      width: 20, 
+      height: 20, 
       display: 'flex', 
       justifyContent: 'center', 
       alignItems: 'center', 
       backgroundColor: '#ff8c00',
       color: '#fff',
-      fontSize: '20px',
-      border: '2px solid #fff',
-      boxShadow: '0 0 10px rgba(255,140,0,0.5)'
+      fontSize: '16px',
+
     },
   },
 ];
@@ -48,7 +47,12 @@ export default function BasketballCourt() {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        
+        nodesDraggable={true}
+        zoomOnPinch={false}
+        elementsSelectable={true}
+        nodesConnectable={false}
+        panOnDrag={false}   
+        zoomOnScroll={false}
         translateExtent={[[0, 0], [COURT_WIDTH, COURT_HEIGHT]]}
         nodeExtent={[[0, 0], [COURT_WIDTH, COURT_HEIGHT]]}
         fitView

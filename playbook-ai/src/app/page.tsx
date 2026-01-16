@@ -7,7 +7,10 @@ import BasketballCourt from '@/src/components/BasketballCourt';
 
 export default function Home() {
   return (
-    <CopilotKit runtimeUrl="/api/copilot">
+    <CopilotKit 
+      runtimeUrl="/api/copilot"
+      agent="basketball_coach"
+    >
       {}
       <CopilotSidebar
         defaultOpen={true}

@@ -1,8 +1,11 @@
 from langchain_openai import ChatOpenAI
 from .state import AgentState
 from coach.playbook import PLAYBOOK
+import os
 
-llm = ChatOpenAI(model="gpt-4o")
+def get_llm():
+    """Lazy load the LLM to ensure env vars are loaded first"""
+    return ChatOpenAI(model="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
 def analyzer_node(state: AgentState):
     positions = state.get("player_positions", [])

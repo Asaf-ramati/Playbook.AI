@@ -256,7 +256,7 @@ useFrontendTool({
           className="absolute inset-0 z-0 pointer-events-none opacity-60"
           style={{
             backgroundImage: `url('/basketball-court.svg')`,
-            backgroundSize: '90%',
+            backgroundSize: '64%',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center top',
             width: '100%',

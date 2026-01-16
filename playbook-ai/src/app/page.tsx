@@ -7,7 +7,7 @@ import BasketballCourt from '@/src/components/BasketballCourt';
 
 export default function Home() {
   return (
-    <CopilotKit runtimeUrl="http://localhost:8000/copilotkit">
+    <CopilotKit runtimeUrl="/api/copilot">
       {}
       <CopilotSidebar
         defaultOpen={true}

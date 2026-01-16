@@ -10,7 +10,7 @@ import ReactFlow, {
   Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { COURT_WIDTH, COURT_HEIGHT, STARTING_POSITIONS } from '@/src/lib/constants';
+import { COURT_WIDTH, COURT_HEIGHT, STARTING_POSITIONS_OFFENCE, STARTING_POSITIONS_DEFENCE } from '@/src/lib/constants';
 import { useFrontendTool, useCopilotReadable } from "@copilotkit/react-core";
 
 const nodeTypes = {
@@ -18,6 +18,7 @@ const nodeTypes = {
 };
 
 const initialNodes = [
+  // Ball
   {
     id: 'ball',
     type: 'input',
@@ -34,17 +35,130 @@ const initialNodes = [
       backgroundColor: '#ff8c00',
       color: '#fff',
       fontSize: '16px',
+    },
+  },
 
+  // TEAM 1 - LAKERS (Purple #552583)
+  {
+    id: 'team1-pg',
+    type: 'player',
+    position: STARTING_POSITIONS_OFFENCE.PG,  // { x: 400, y: 420 }
+    data: { 
+      name: 'D. Russell',
+      number: 1,
+      position: 'PG',
+      team: 'Lakers',
+      color: '#552583'  // Lakers purple
     },
   },
   {
-    id: 'player-1',
+    id: 'team1-sg',
     type: 'player',
-    position: { x: 200, y: 200 },
+    position: STARTING_POSITIONS_OFFENCE.SG,  // { x: 150, y: 350 }
     data: { 
-      name: 'LeBron James', 
-      number: 23, 
-      color: '#552583' 
+      name: 'A. Reaves',
+      number: 15,
+      position: 'SG',
+      team: 'Lakers',
+      color: '#552583'
+    },
+  },
+  {
+    id: 'team1-sf',
+    type: 'player',
+    position: STARTING_POSITIONS_OFFENCE.SF,  // { x: 650, y: 350 }
+    data: { 
+      name: 'LeBron James',
+      number: 23,
+      position: 'SF',
+      team: 'Lakers',
+      color: '#552583'
+    },
+  },
+  {
+    id: 'team1-pf',
+    type: 'player',
+    position: STARTING_POSITIONS_OFFENCE.PF,  // { x: 250, y: 150 }
+    data: { 
+      name: 'R. Hachimura',
+      number: 28,
+      position: 'PF',
+      team: 'Lakers',
+      color: '#552583'
+    },
+  },
+  {
+    id: 'team1-c',
+    type: 'player',
+    position: STARTING_POSITIONS_OFFENCE.C,  // { x: 550, y: 150 }
+    data: { 
+      name: 'A. Davis',
+      number: 3,
+      position: 'C',
+      team: 'Lakers',
+      color: '#552583'
+    },
+  },
+
+  // TEAM 2 - WARRIORS (Blue #1D428A)
+  {
+    id: 'team2-pg',
+    type: 'player',
+    position: STARTING_POSITIONS_DEFENCE.PG,  // Opposite end
+    data: { 
+      name: 'S. Curry',
+      number: 30,
+      position: 'PG',
+      team: 'Warriors',
+      color: '#1D428A'
+    },
+  },
+  {
+    id: 'team2-sg',
+    type: 'player',
+    position: STARTING_POSITIONS_DEFENCE.SG,
+    data: { 
+      name: 'K. Thompson',
+      number: 11,
+      position: 'SG',
+      team: 'Warriors',
+      color: '#1D428A'
+    },
+  },
+  {
+    id: 'team2-sf',
+    type: 'player',
+    position: STARTING_POSITIONS_DEFENCE.SF,
+    data: { 
+      name: 'A. Wiggins',
+      number: 22,
+      position: 'SF',
+      team: 'Warriors',
+      color: '#1D428A'
+    },
+  },
+  {
+    id: 'team2-pf',
+    type: 'player',
+    position: STARTING_POSITIONS_DEFENCE.PF,
+    data: { 
+      name: 'D. Green',
+      number: 23,
+      position: 'PF',
+      team: 'Warriors',
+      color: '#1D428A'
+    },
+  },
+  {
+    id: 'team2-c',
+    type: 'player',
+    position: STARTING_POSITIONS_DEFENCE.C,
+    data: { 
+      name: 'K. Looney',
+      number: 5,
+      position: 'C',
+      team: 'Warriors',
+      color: '#1D428A'
     },
   },
 ];
@@ -121,9 +235,7 @@ useFrontendTool({
         panOnDrag={false}   
         zoomOnScroll={false}
         translateExtent={[[0, 0], [COURT_WIDTH, COURT_HEIGHT]]}
-        nodeExtent={[[0, 0], [COURT_WIDTH, COURT_HEIGHT]]}
-        fitView
-        
+        nodeExtent={[[0, 0], [COURT_WIDTH, COURT_HEIGHT]]}        
         style={{ width: '100%', height: '100%' }}
       >
         {}

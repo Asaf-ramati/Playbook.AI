@@ -3,12 +3,20 @@ export const COURT_WIDTH = 800;
 export const COURT_HEIGHT = 500;
 
 
-export const STARTING_POSITIONS = {
-  PG: { x: 400, y: 420 }, 
-  SG: { x: 150, y: 350 },
-  SF: { x: 650, y: 350 },
-  PF: { x: 250, y: 150 }, 
-  C: { x: 550, y: 150 }, 
+export const STARTING_POSITIONS_OFFENCE = {
+  PG: { x: 405, y: 250 }, 
+  SG: { x: 475, y: 210 },
+  SF: { x: 335, y: 210 },
+  PF: { x: 370, y: 150 }, 
+  C: { x: 435, y: 150 }, 
+};
+
+export const STARTING_POSITIONS_DEFENCE = {
+  PG: { x: 405, y: 230 },   
+  SG: { x: 475, y: 190 },   
+  SF: { x: 335, y: 190 },   
+  PF: { x: 370, y: 130 },   
+  C: { x: 435, y: 130 },    
 };
 
 export const COURT_ZONES = {

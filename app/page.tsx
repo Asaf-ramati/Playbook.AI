@@ -11,6 +11,11 @@ export default function Home() {
       {}
       <CopilotSidebar
         defaultOpen={true}
+        clickOutsideToClose={false} 
+        hitEscapeToClose={false}
+        onSetOpen={(open) => {
+          if (!open) return;
+        }}
         instructions="You are a basketball tactical assistant. Help the coach manage players and plays on the court."
         labels={{
           title: "Playbook AI Assistant",

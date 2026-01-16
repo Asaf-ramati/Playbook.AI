@@ -4,15 +4,15 @@ export const COURT_HEIGHT = 580;
 
 
 export const STARTING_POSITIONS_OFFENCE = {
-  PG: { x: 405, y: 250 }, 
-  SG: { x: 475, y: 210 },
-  SF: { x: 335, y: 210 },
-  PF: { x: 370, y: 150 }, 
-  C: { x: 435, y: 150 }, 
+  PG: { x: 160, y: 200 }, 
+  SG: { x: 70, y: 150 },
+  SF: { x: 250, y: 150 },
+  PF: { x: 85, y: 30 }, 
+  C: { x: 235, y: 30 }, 
 };
 
 export const STARTING_POSITIONS_DEFENCE = {
-  PG: { x: 405, y: 230 },   
+  PG: { x: 160, y: 180 },   
   SG: { x: 475, y: 190 },   
   SF: { x: 335, y: 190 },   
   PF: { x: 370, y: 130 },   

@@ -256,13 +256,13 @@ useFrontendTool({
           className="absolute inset-0 z-0 pointer-events-none opacity-60"
           style={{
             backgroundImage: `url('/basketball-court.svg')`,
-            backgroundSize: 'contain',
+            backgroundSize: '90%',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center top',
             width: '100%',
             height: '100%',
             filter: 'invert(1) brightness(0.8)', 
-            transform: 'rotate(0deg)',
+            clipPath: 'inset(0 0 0 0)',
           }}
         />
 

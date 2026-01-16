@@ -223,21 +223,34 @@ useFrontendTool({
   return (
     <div className="relative w-full h-[600px] bg-[#1a1a1a] rounded-xl overflow-hidden border-2 border-zinc-800 shadow-2xl">
       <ReactFlow
-        nodes={nodes}
-        nodeTypes={nodeTypes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodesDraggable={true}
-        zoomOnPinch={false}
-        elementsSelectable={true}
-        nodesConnectable={false}
-        panOnDrag={false}   
-        zoomOnScroll={false}
-        translateExtent={[[0, 0], [COURT_WIDTH, COURT_HEIGHT]]}
-        nodeExtent={[[0, 0], [COURT_WIDTH, COURT_HEIGHT]]}        
-        style={{ width: '100%', height: '100%' }}
-      >
+      nodes={nodes}
+      nodeTypes={nodeTypes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      nodesDraggable={true}
+      elementsSelectable={true}
+      nodesConnectable={false}
+      
+      // Prevent all panning and zooming
+      panOnDrag={false}
+      panOnScroll={false}
+      preventScrolling={true}
+      zoomOnScroll={false}
+      zoomOnPinch={false}
+      zoomOnDoubleClick={false}
+      
+      // Set boundaries
+      translateExtent={[[0, 0], [COURT_WIDTH, COURT_HEIGHT]]}
+      nodeExtent={[[0, 0], [COURT_WIDTH, COURT_HEIGHT]]}
+      
+      // Lock viewport position and zoom
+      defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+      minZoom={1}
+      maxZoom={1}
+      
+      style={{ width: '100%', height: '100%' }}
+    >
         {}
         <div 
           className="absolute inset-0 z-0 pointer-events-none opacity-60"

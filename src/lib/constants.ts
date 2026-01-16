@@ -1,6 +1,6 @@
 
-export const COURT_WIDTH = 800;
-export const COURT_HEIGHT = 500;
+export const COURT_WIDTH = 370;
+export const COURT_HEIGHT = 580;
 
 
 export const STARTING_POSITIONS_OFFENCE = {

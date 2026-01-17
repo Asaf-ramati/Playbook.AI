@@ -1,138 +1,125 @@
+import csv
+import os
 from typing import Dict, List, Optional
 
 class PlayerProfile(dict):
-    def __init__(self, id, name, position, archetype, shooting_ranges, key_skills, speed):
+    def __init__(self, id, name, team, position, archetype, shooting_ranges, key_skills, speed, stats):
         super().__init__(
             id=id,
             name=name,
+            team=team,
             position=position,
             archetype=archetype,
             shooting_ranges=shooting_ranges,
             key_skills=key_skills,
-            speed=speed
+            speed=speed,
+            stats=stats # Storing raw stats for the AI to reference
         )
-        
-MOCK_DB = {
-    "lakers_mock": [
-        PlayerProfile(
-            id="team1-pg",
-            name="D'Angelo Russell",
-            position="PG",
-            archetype="Shot Creator",
-            shooting_ranges=["Top3", "Wing3", "Mid"],
-            key_skills=["Passing", "Pick & Roll", "3PT"],
-            speed=7
-        ),
-        PlayerProfile(
-            id="team1-sg",
-            name="Austin Reaves",
-            position="SG",
-            archetype="Secondary Playmaker",
-            shooting_ranges=["Wing3", "Mid", "Paint"],
-            key_skills=["Drives", "Foul Drawing", "IQ"],
-            speed=7
-        ),
-        PlayerProfile(
-            id="team1-sf",
-            name="LeBron James",
-            position="SF",
-            archetype="Point Forward",
-            shooting_ranges=["Paint", "Top3", "Mid"],
-            key_skills=["Elite Passing", "Power Driving", "Floor General"],
-            speed=8
-        ),
-        PlayerProfile(
-            id="team1-pf",
-            name="Rui Hachimura",
-            position="PF",
-            archetype="Stretch 4",
-            shooting_ranges=["Mid", "Corner3", "Paint"],
-            key_skills=["Mid-range", "Transition Running", "Post-up"],
-            speed=7
-        ),
-        PlayerProfile(
-            id="team1-c",
-            name="Anthony Davis",
-            position="C",
-            archetype="Two-Way Elite Big",
-            shooting_ranges=["Paint", "Mid"],
-            key_skills=["Elite Defense", "Rebounding", "Lob Threat"],
-            speed=7
-        )
-    ],
-    "warriors_mock": [
-        PlayerProfile(
-            id="team2-pg",
-            name="Steph Curry",
-            position="PG",
-            archetype="Movement Shooter",
-            shooting_ranges=["Top3", "Wing3", "Corner3", "Paint"],
-            key_skills=["Elite 3PT", "Off-ball Movement", "Gravity"],
-            speed=9
-        ),
-        PlayerProfile(
-            id="team2-sg",
-            name="Buddy Hield",
-            position="SG",
-            archetype="Sharpshooter",
-            shooting_ranges=["Wing3", "Corner3"],
-            key_skills=["3PT", "Catch & Shoot", "Spacing"],
-            speed=7
-        ),
-        PlayerProfile(
-            id="team2-sf",
-            name="Andrew Wiggins",
-            position="SF",
-            archetype="3&D Wing",
-            shooting_ranges=["Corner3", "Mid", "Paint"],
-            key_skills=["On-ball Defense", "Slashing", "Athleticism"],
-            speed=8
-        ),
-        PlayerProfile(
-            id="team2-pf",
-            name="Jonathan Kuminga",
-            position="PF",
-            archetype="Athletic Slasher",
-            shooting_ranges=["Paint", "Mid"],
-            key_skills=["Dunking", "Aggressive Driving", "Speed"],
-            speed=9
-        ),
-        PlayerProfile(
-            id="team2-c",
-            name="Draymond Green",
-            position="C",
-            archetype="Defensive Anchor / Playmaker",
-            shooting_ranges=["Paint"],
-            key_skills=["Switch Defense", "Playmaking", "Screen Setting"],
-            speed=6
-        )
-    ]
-}
 
-def load_player_capabilities(player_id: str, team_id: str) -> str:
+# Global storage for all NBA teams
+NBA_DATA: Dict[str, List[PlayerProfile]] = {}
+
+def load_data_from_csv(file_path: str = "nba_stats_2025.csv"):
     """
-    פונקציה שמחזירה תיאור טקסטואלי של יכולות השחקן עבור ה-LLM.
-    זה מאפשר למאמן להבין *מי* נמצא בעמדה מסוימת.
+    Parses the game-by-game stats CSV. 
+    Aggregates data to create a tactical profile for each player.
     """
-    roster = get_team_roster(team_id)
-    profile = get_player_by_id(player_id, roster)
+    global NBA_DATA
+    if not os.path.exists(file_path):
+        print(f"File {file_path} not found.")
+        return
+
+    # Temporary storage to handle multiple entries for the same player
+    player_agg = {}
+
+    with open(file_path, mode='r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            name = row['Player']
+            team = row['Tm']
+            
+            # Use only the most recent/relevant entry or average them
+            # For simplicity, we'll take the first occurrence in the file (latest games usually)
+            if name in player_agg:
+                continue
+                
+            stats = {
+                "pts": float(row['PTS']),
+                "ast": float(row['AST']),
+                "trb": float(row['TRB']),
+                "blk": float(row['BLK']),
+                "stl": float(row['STL']),
+                "three_p_pct": float(row['3P%']) if row['3P%'] else 0,
+                "mp": float(row['MP'])
+            }
+
+            # Determine tactical traits based on these numbers
+            archetype, skills, ranges, pos = _analyze_player_traits(stats)
+            
+            p_id = f"{team.lower()}-{name.replace(' ', '-').lower()}"
+            
+            profile = PlayerProfile(
+                id=p_id,
+                name=name,
+                team=team,
+                position=pos,
+                archetype=archetype,
+                shooting_ranges=ranges,
+                key_skills=skills,
+                speed=_calculate_speed(pos, stats),
+                stats=stats
+            )
+            
+            if team not in NBA_DATA:
+                NBA_DATA[team] = []
+            NBA_DATA[team].append(profile)
+
+def _analyze_player_traits(stats):
+    """
+    Heuristic engine: Categorizes players based on their box score.
+    """
+    skills = []
+    ranges = ["Paint"]
     
-    if not profile:
-        return "Unknown player capabilities."
-        
-    skills_str = ", ".join(profile['skills'])
-    return f"{profile['name']} is a {profile['position']} specialized in {skills_str}. Shooting range: {profile['shooting_range']}."
+    # 1. Determine Position & Archetype
+    if stats['ast'] >= 5:
+        pos, arch = "G", "Floor General"
+        skills += ["Playmaking", "Ball Handling"]
+        ranges += ["Top3", "Wing3"]
+    elif stats['trb'] >= 9 or stats['blk'] >= 1.5:
+        pos, arch = "C", "Interior Force"
+        skills += ["Rebounding", "Rim Protection"]
+    elif stats['three_p_pct'] > 0.40 and stats['pts'] > 15:
+        pos, arch = "F/G", "Sharpshooter"
+        skills += ["3PT Shooting", "Off-ball Movement"]
+        ranges += ["Top3", "Wing3", "Corner3"]
+    else:
+        pos, arch = "F", "Two-Way Player"
+        skills += ["Defense", "Versatility"]
+        ranges += ["Mid"]
 
+    # 2. Add specific skills
+    if stats['three_p_pct'] > 0.33: ranges += ["Corner3"]
+    if stats['stl'] >= 1.5: skills.append("Passing Lane Interceptor")
+    
+    return arch, skills, ranges, pos
 
-def get_team_roster(team_id: str = "lakers_mock") -> List[Dict]:
-    """
-    פונקציה זו מדמה קריאה ל-DB או API חיצוני.
-    בעתיד תחליף את המימוש כאן לקריאה אמיתית.
-    """
-    return MOCK_DB.get(team_id, [])
+def _calculate_speed(pos, stats):
+    """Bigger players are slower, guards are faster."""
+    base_speed = 7
+    if pos == "G": base_speed = 8
+    if pos == "C": base_speed = 5
+    return base_speed
+
+# --- Helper Functions for the AI ---
+
+def get_team_roster(team_abbr: str) -> List[Dict]:
+    """Get roster by team abbreviation (e.g., 'LAL', 'BOS')"""
+    if not NBA_DATA:
+        load_data_from_csv()
+    return NBA_DATA.get(team_abbr, [])
 
 def get_player_by_id(player_id: str, roster: List[Dict]) -> Optional[Dict]:
-    """שליפת פרופיל שחקן לפי ID מתוך הסגל הנתון"""
     for player in roster:
         if player["id"] == player_id:
             return player

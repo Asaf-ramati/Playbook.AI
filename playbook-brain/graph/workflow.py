@@ -1,10 +1,10 @@
 from langgraph.graph import StateGraph, START, END
 from .state import AgentState
-from .nodes import (
-    analyzer_node, 
-    router_node, 
-    consultant_node, 
-    playbook_selector_node, 
+from nodes import (
+    analyzer_node,
+    router_node,
+    consultant_node,
+    playbook_selector_node,
     executor_node
 )
 

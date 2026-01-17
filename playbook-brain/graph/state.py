@@ -25,6 +25,7 @@ class AgentState(TypedDict):
     should_analyze: Optional[bool] 
     intent: Optional[str]
     route_to: Optional[str]  # <--- הוסף את השורה הזו חובה!
+    target_play: Optional[str]
     
     # --- אינטגרציות ---
     copilotkit: Optional[dict]

@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from graph.state import AgentState
 from coach.playbook import PLAYBOOK
 from .llm_utils import get_llm
-from graph.constants import get_team_abbreviation 
+from graph.constants import get_team_abbreviation
 
 class RouterDecision(BaseModel):
     """
@@ -11,11 +11,11 @@ class RouterDecision(BaseModel):
     """
     intent: Literal["CONSULT", "PLAYBOOK", "ADJUST", "SETUP"] = Field(
         ...,
-        description="CONSULT: advice, PLAYBOOK: run play, ADJUST: manual move, SETUP: selecting NBA teams."
+        description="The categorization of the user's request."
     )
-    play_id: Optional[str] = Field(None)
-    user_team: Optional[str] = Field(None, description="The team the user selected (e.g., 'LAL')")
-    opponent_team: Optional[str] = Field(None, description="The opponent team selected (e.g., 'BOS')")
+    play_id: Optional[str] = Field(None, description="The EXACT ID of the play from the Available Plays list (if intent is PLAYBOOK)")
+    user_team: Optional[str] = Field(None, description="Only if changing teams: The new user team")
+    opponent_team: Optional[str] = Field(None, description="Only if changing teams: The new opponent team")
     reasoning: str = Field(...)
 
 def router_node(state: AgentState) -> Dict[str, Any]:
@@ -27,68 +27,86 @@ def router_node(state: AgentState) -> Dict[str, Any]:
     current_user_team = state.get('user_team')
     current_opp_team = state.get('opponent_team')
 
-    print(f"\n🎯 ROUTER NODE | Teams: {current_user_team} vs {current_opp_team}")
+    print(f"\n🎯 ROUTER NODE | Current State: {current_user_team} vs {current_opp_team}")
 
-    tactical_summary = state.get('analysis', {}).get('tactical_summary', 'No analysis available')
-    available_plays_str = ", ".join(PLAYBOOK.keys())
+    # Generate a formatted list of plays with descriptions for better context
+    play_descriptions = "\n".join([f"- {pid}: {data['name']} ({data['description']})" for pid, data in PLAYBOOK.items()])
 
     router_prompt = f"""
-    You are the NBA Head Coach Logic Unit.
-    
-    **Current Game Config:**
-    - User Team: {current_user_team if current_user_team else "NOT SET"}
-    - Opponent: {current_opp_team if current_opp_team else "NOT SET"}
+    You are the Brain of an NBA Coaching Assistant. determine the NEXT STEP based on the user's request.
 
-    **Context:**
-    1. User Message: "{user_message}"
-    2. Court Analysis: {tactical_summary}
-    3. Plays: [{available_plays_str}]
+    **CURRENT CONTEXT:**
+    - Teams Configured: {bool(current_user_team)} ({current_user_team} vs {current_opp_team})
+    - User Request: "{user_message}"
 
-    **Decision Logic:**
-    1. **SETUP**: If the user mentions a team name (Lakers, Celtics, Warriors, etc.) OR if teams are NOT SET yet.
-       - Extract the team names in natural language (e.g., "Lakers", "Boston", "Celtics")
-       - Identify which team the user wants to coach and which is the opponent
-       
-    2. **CONSULT/PLAYBOOK/ADJUST**: Only use these if BOTH teams are already set.
-    
-    **Output:**
-    - intent: "SETUP" if teams need configuration
-    - user_team: The team name the user wants to coach (natural language, e.g., "Lakers")
-    - opponent_team: The opponent team name (natural language, e.g., "Boston" or "Celtics")
-    - reasoning: Brief explanation
-    
-    **Examples:**
-    - "I'm the Lakers coach playing Boston" → user_team: "Lakers", opponent_team: "Boston"
-    - "Let's do Warriors vs Celtics, I'm Golden State" → user_team: "Warriors", opponent_team: "Celtics"
+    **AVAILABLE PLAYS (ID: Name - Description):**
+    {play_descriptions}
+
+    **DECISION LOGIC (Order of Importance):**
+
+    1. **SETUP** (Team Selection):
+       - CHOOSE THIS IF:
+         a) Teams are NOT set yet (Current is None).
+         b) User EXPLICITLY asks to CHANGE teams (e.g., "Switch to Celtics", "Actually I want the Heat").
+       - ACTION: Extract `user_team` and `opponent_team`.
+
+    2. **PLAYBOOK** (Running Tactics):
+       - CHOOSE THIS IF:
+         a) Teams ARE set.
+         b) User asks to run a play, tactic, or specific movement.
+       - ACTION: You MUST map the request to the closest `play_id` from the AVAILABLE PLAYS list.
+         * "Pick and Roll" / "P&R" -> PNR_TOP_CENTRAL (unless a specific type like "Wing" or "Spanish" is requested)
+         * "Horns" -> SET_HORNS_MAIN
+         * "Iso" / "Isolation" -> SET_ISO_TOP
+         * "Ghost Screen" -> PNR_GHOST_SCREEN
+         * "Iverson" -> MOTION_IVERSON_CUT
+         * "5 Out" -> SET_5_OUT
+         * "Double Drag" -> PNR_DOUBLE_DRAG
+
+    3. **ADJUST** (Manual Changes):
+       - CHOOSE THIS IF: User wants to move a specific player manually (e.g., "Move LeBron to the corner").
+
+    4. **CONSULT** (General Talk):
+       - CHOOSE THIS IF: User asks a question or greets, without asking for an action.
+
+    **OUTPUT INSTRUCTIONS:**
+    - If intent is PLAYBOOK, you MUST fill `play_id` with the EXACT string from the list above.
+    - If intent is SETUP, you MUST fill `user_team` and `opponent_team`.
     """
-    
+
     decision = structured_llm.invoke(router_prompt)
 
-    print(f"🤖 Intent: {decision.intent} | Extracted: {decision.user_team} vs {decision.opponent_team}")
+    print(f"🤖 Intent: {decision.intent} | Play: {decision.play_id} | Teams: {decision.user_team} vs {decision.opponent_team}")
 
-    # Convert natural language team names to abbreviations
+    # Handle Team Name Normalization for SETUP
     final_user_team = current_user_team
     final_opp_team = current_opp_team
 
-    if decision.user_team:
-        try:
-            final_user_team = get_team_abbreviation(decision.user_team)
-            print(f"✅ '{decision.user_team}' → '{final_user_team}'")
-        except ValueError:
-            print(f"❌ Could not find abbreviation for '{decision.user_team}'")
+    if decision.intent == "SETUP":
+        if decision.user_team:
+            try:
+                final_user_team = get_team_abbreviation(decision.user_team)
+            except ValueError:
+                pass
+        if decision.opponent_team:
+            try:
+                final_opp_team = get_team_abbreviation(decision.opponent_team)
+            except ValueError:
+                pass
 
-    if decision.opponent_team:
-        try:
-            final_opp_team = get_team_abbreviation(decision.opponent_team)
-            print(f"✅ '{decision.opponent_team}' → '{final_opp_team}'")
-        except ValueError:
-            print(f"❌ Could not find abbreviation for '{decision.opponent_team}'")
-
-    print(f"➡️  Routing to: {decision.intent}\n")
+    # Handle Play Selection
+    selected_play_data = None
+    if decision.intent == "PLAYBOOK" and decision.play_id:
+        selected_play_data = PLAYBOOK.get(decision.play_id)
+        if selected_play_data:
+            print(f"✅ Play Selected: {selected_play_data['name']}")
+        else:
+            print(f"❌ Error: Play ID '{decision.play_id}' not found in PLAYBOOK.")
 
     return {
         "intent": decision.intent,
-        "target_play": decision.play_id,
+        "selected_play": selected_play_data, # Stores the play data in State
         "user_team": final_user_team,
-        "opponent_team": final_opp_team
+        "opponent_team": final_opp_team,
+        "target_play": decision.play_id # Ensure this matches what playbook_selector expects
     }

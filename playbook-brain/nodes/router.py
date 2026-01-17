@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from graph.state import AgentState
 from coach.playbook import PLAYBOOK
 from .llm_utils import get_llm
+from graph.constants import get_team_abbreviation 
 
 class RouterDecision(BaseModel):
     """
@@ -18,17 +19,19 @@ class RouterDecision(BaseModel):
     reasoning: str = Field(...)
 
 def router_node(state: AgentState) -> Dict[str, Any]:
+
     llm = get_llm()
     structured_llm = llm.with_structured_output(RouterDecision)
-    
+
     user_message = state['messages'][-1].content
-    # Check if teams are already set in state
     current_user_team = state.get('user_team')
     current_opp_team = state.get('opponent_team')
-    
+
+    print(f"\n🎯 ROUTER NODE | Teams: {current_user_team} vs {current_opp_team}")
+
     tactical_summary = state.get('analysis', {}).get('tactical_summary', 'No analysis available')
     available_plays_str = ", ".join(PLAYBOOK.keys())
-    
+
     router_prompt = f"""
     You are the NBA Head Coach Logic Unit.
     
@@ -42,20 +45,50 @@ def router_node(state: AgentState) -> Dict[str, Any]:
     3. Plays: [{available_plays_str}]
 
     **Decision Logic:**
-    1. **SETUP**: If the user mentions a team name (Lakers, BOS, NYK, etc.) OR if teams are NOT SET yet.
-       - Your goal is to identify which team the user wants to be and who they play against.
+    1. **SETUP**: If the user mentions a team name (Lakers, Celtics, Warriors, etc.) OR if teams are NOT SET yet.
+       - Extract the team names in natural language (e.g., "Lakers", "Boston", "Celtics")
+       - Identify which team the user wants to coach and which is the opponent
+       
     2. **CONSULT/PLAYBOOK/ADJUST**: Only use these if BOTH teams are already set.
     
     **Output:**
-    Identify the intent. If SETUP, try to extract the team abbreviations (e.g., 'LAL', 'BOS', 'GSW').
+    - intent: "SETUP" if teams need configuration
+    - user_team: The team name the user wants to coach (natural language, e.g., "Lakers")
+    - opponent_team: The opponent team name (natural language, e.g., "Boston" or "Celtics")
+    - reasoning: Brief explanation
+    
+    **Examples:**
+    - "I'm the Lakers coach playing Boston" → user_team: "Lakers", opponent_team: "Boston"
+    - "Let's do Warriors vs Celtics, I'm Golden State" → user_team: "Warriors", opponent_team: "Celtics"
     """
     
     decision = structured_llm.invoke(router_prompt)
-    
-    # Update state logic
+
+    print(f"🤖 Intent: {decision.intent} | Extracted: {decision.user_team} vs {decision.opponent_team}")
+
+    # Convert natural language team names to abbreviations
+    final_user_team = current_user_team
+    final_opp_team = current_opp_team
+
+    if decision.user_team:
+        try:
+            final_user_team = get_team_abbreviation(decision.user_team)
+            print(f"✅ '{decision.user_team}' → '{final_user_team}'")
+        except ValueError:
+            print(f"❌ Could not find abbreviation for '{decision.user_team}'")
+
+    if decision.opponent_team:
+        try:
+            final_opp_team = get_team_abbreviation(decision.opponent_team)
+            print(f"✅ '{decision.opponent_team}' → '{final_opp_team}'")
+        except ValueError:
+            print(f"❌ Could not find abbreviation for '{decision.opponent_team}'")
+
+    print(f"➡️  Routing to: {decision.intent}\n")
+
     return {
         "intent": decision.intent,
         "target_play": decision.play_id,
-        "user_team": decision.user_team or current_user_team,
-        "opponent_team": decision.opponent_team or current_opp_team
+        "user_team": final_user_team,
+        "opponent_team": final_opp_team
     }

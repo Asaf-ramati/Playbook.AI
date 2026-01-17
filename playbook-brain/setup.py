@@ -8,5 +8,6 @@ setup(
         "langgraph>=0.2.59",
         "langchain-openai>=0.3.14",
         "langchain-core>=0.3.28",
+        "pandas>=2.0.0",
     ],
 )

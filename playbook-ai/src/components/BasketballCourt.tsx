@@ -9,187 +9,73 @@ import ReactFlow, {
   Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { COURT_WIDTH, COURT_HEIGHT, STARTING_POSITIONS_OFFENCE, STARTING_POSITIONS_DEFENCE } from '@/src/lib/constants';
+import { COURT_WIDTH, COURT_HEIGHT } from '@/src/lib/constants';
 import { useCoAgent } from "@copilotkit/react-core";
 
 const nodeTypes = {
   player: PlayerNode,
 };
 
-const initialNodes = [
-  // Ball
-  {
-    id: 'ball',
-    type: 'input',
-    data: { label: '🏀' },
-    position: { x: COURT_WIDTH / 2 - 20, y: COURT_HEIGHT - 100 },
-    draggable: true,
-    style: { 
-      borderRadius: '50%', 
-      width: 20, 
-      height: 20, 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      backgroundColor: '#ff8c00',
-      color: '#fff',
-      fontSize: '16px',
-    },
-  },
-
-  // TEAM 1 - LAKERS (Purple #552583)
-  {
-    id: 'team1-pg',
-    type: 'player',
-    position: STARTING_POSITIONS_OFFENCE.PG,  // { x: 400, y: 420 }
-    data: { 
-      name: 'D. Russell',
-      number: 1,
-      position: 'PG',
-      team: 'Lakers',
-      color: '#552583'  // Lakers purple
-    },
-  },
-  {
-    id: 'team1-sg',
-    type: 'player',
-    position: STARTING_POSITIONS_OFFENCE.SG,  // { x: 150, y: 350 }
-    data: { 
-      name: 'A. Reaves',
-      number: 15,
-      position: 'SG',
-      team: 'Lakers',
-      color: '#552583'
-    },
-  },
-  {
-    id: 'team1-sf',
-    type: 'player',
-    position: STARTING_POSITIONS_OFFENCE.SF,  // { x: 650, y: 350 }
-    data: { 
-      name: 'LeBron James',
-      number: 23,
-      position: 'SF',
-      team: 'Lakers',
-      color: '#552583'
-    },
-  },
-  {
-    id: 'team1-pf',
-    type: 'player',
-    position: STARTING_POSITIONS_OFFENCE.PF,  // { x: 250, y: 150 }
-    data: { 
-      name: 'R. Hachimura',
-      number: 28,
-      position: 'PF',
-      team: 'Lakers',
-      color: '#552583'
-    },
-  },
-  {
-    id: 'team1-c',
-    type: 'player',
-    position: STARTING_POSITIONS_OFFENCE.C,  // { x: 550, y: 150 }
-    data: { 
-      name: 'A. Davis',
-      number: 3,
-      position: 'C',
-      team: 'Lakers',
-      color: '#552583'
-    },
-  },
-
-  // TEAM 2 - WARRIORS (Blue #1D428A)
-  {
-    id: 'team2-pg',
-    type: 'player',
-    position: STARTING_POSITIONS_DEFENCE.PG,  // Opposite end
-    data: { 
-      name: 'S. Curry',
-      number: 30,
-      position: 'PG',
-      team: 'Warriors',
-      color: '#1D428A'
-    },
-  },
-  {
-    id: 'team2-sg',
-    type: 'player',
-    position: STARTING_POSITIONS_DEFENCE.SG,
-    data: { 
-      name: 'K. Thompson',
-      number: 11,
-      position: 'SG',
-      team: 'Warriors',
-      color: '#1D428A'
-    },
-  },
-  {
-    id: 'team2-sf',
-    type: 'player',
-    position: STARTING_POSITIONS_DEFENCE.SF,
-    data: { 
-      name: 'A. Wiggins',
-      number: 22,
-      position: 'SF',
-      team: 'Warriors',
-      color: '#1D428A'
-    },
-  },
-  {
-    id: 'team2-pf',
-    type: 'player',
-    position: STARTING_POSITIONS_DEFENCE.PF,
-    data: { 
-      name: 'D. Green',
-      number: 23,
-      position: 'PF',
-      team: 'Warriors',
-      color: '#1D428A'
-    },
-  },
-  {
-    id: 'team2-c',
-    type: 'player',
-    position: STARTING_POSITIONS_DEFENCE.C,
-    data: { 
-      name: 'K. Looney',
-      number: 5,
-      position: 'C',
-      team: 'Warriors',
-      color: '#1D428A'
-    },
-  },
-];
-
-const initialEdges: any[] = [];
+const BALL_STYLE = { 
+  borderRadius: '50%', 
+  width: 20, 
+  height: 20, 
+  display: 'flex', 
+  justifyContent: 'center', 
+  alignItems: 'center', 
+  backgroundColor: '#ff8c00',
+  color: '#fff',
+  fontSize: '16px',
+  zIndex: 1000 
+};
 
 export default function BasketballCourt() {
 
   const { state, setState } = useCoAgent({
-    name: "basketball_coach", // חייב להתאים ל-graphId ב-route.ts
+    name: "basketball_coach", 
     initialState: {
-      players: initialNodes as any[], // ה-State התחלתי הוא מערך ה-Nodes שלנו
+      players: [],         // מתחילים ריק
+      ball_position: null, // אין כדור עדיין
     },
   });
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(state.players);
+  // מתחילים עם מערך ריק במקום initialNodes
+  const [nodes, setNodes, onNodesChange] = useNodesState([]); 
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
 useEffect(() => {
-  if (state.players) {
-    setNodes(state.players.map((player: any) => ({
-      ...player,
-      style: {
-        ...player.style,
-        transition: 'all 1.5s ease-in-out',
-      }
-    })));
-  }
-}, [state.players, setNodes]);
+    if (state.players) {
+      // 👇 התיקון כאן: הוספנו : any[]
+      // זה אומר ל-TS: "אל תדאג, זה מערך שאפשר להוסיף לו דברים"
+      const gameNodes: any[] = [...state.players]; 
 
-  // 3. עדכון ה-AI כשגוררים שחקן ידנית במגרש
+      // 2. אם יש מיקום לכדור, הוסף אותו כ-Node עצמאי
+      if (state.ball_position) {
+        gameNodes.push({
+          id: 'ball',
+          type: 'default', 
+          data: { label: '🏀' },
+          position: state.ball_position,
+          draggable: false, 
+          style: BALL_STYLE,
+        });
+      }
+
+      // 3. הוסף אנימציה לכולם ועדכן את הלוח
+      setNodes(gameNodes.map((node: any) => ({
+        ...node,
+        style: {
+          ...node.style,
+          transition: 'all 1.0s ease-in-out', 
+        }
+      })));
+    }
+  }, [state.players, state.ball_position, setNodes]);
+  // עדכון ה-AI כשגוררים שחקן ידנית
   const onNodeDragStop = (_: any, node: any) => {
+    // אם גררו את הכדור - לא מעדכנים שחקן (אופציונלי: אפשר לממש גרירת כדור)
+    if (node.id === 'ball') return;
+
     setState((prev: any) => ({
       ...prev,
       players: prev.players.map((n: any) => 
@@ -197,7 +83,7 @@ useEffect(() => {
       ),
     }));
   };
-  
+
   return (
     <div className="relative w-full h-[600px] bg-[#1a1a1a] rounded-xl overflow-hidden border-2 border-zinc-800 shadow-2xl">
       <ReactFlow

@@ -1,7 +1,8 @@
 from typing import Dict, Any, List
 from langchain_core.messages import AIMessage
-from .state import AgentState
-from .roster import get_team_roster
+from graph.state import AgentState
+from graph.roster import get_team_roster
+from graph.constants import get_team_color
 
 # --- Constants (Matching your Frontend) ---
 
@@ -32,7 +33,10 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
     """
     user_team_abbr = state.get("user_team")
     opp_team_abbr = state.get("opponent_team")
-    
+
+    user_color = get_team_color(user_team_abbr)
+    opp_color = get_team_color(opp_team_abbr)
+
     # Validation
     if not user_team_abbr or not opp_team_abbr:
         return {
@@ -50,6 +54,7 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
     # This ensures we get the real starters like LeBron, Luka, etc.
     user_starters = sorted(user_roster, key=lambda x: x['stats']['mp'], reverse=True)[:5]
     opp_starters = sorted(opp_roster, key=lambda x: x['stats']['mp'], reverse=True)[:5]
+
 
     all_players_on_board = []
     
@@ -83,7 +88,8 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
                 **player,           # Includes stats, skills, name
                 "side": "ATTACK",   # Frontend uses this for color (Blue)
                 "label": player["name"],
-                "jersey": i + 1     # Optional visual
+                "jersey": i + 1,     # Optional visual
+                "color": user_color
             }
         }
         all_players_on_board.append(player_node)
@@ -101,7 +107,8 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
                 **player,
                 "side": "DEFENSE", # Frontend uses this for color (Red)
                 "label": player["name"],
-                "jersey": i + 10
+                "jersey": i + 10,
+                "color": opp_color
             }
         }
         all_players_on_board.append(player_node)

@@ -38,6 +38,16 @@ def route_next_step(state: AgentState):
         
     return "consultant"
 
+def should_continue_play(state: AgentState):
+    """
+    בדוק אם יש עוד צעדים בתרגיל.
+    אם intent=PLAYBOOK ויש current_step_index > 0, המשך לצעד הבא.
+    """
+    if state.get("intent") == "PLAYBOOK" and state.get("current_step_index", 0) > 0:
+        return "executor"  # ✅ חזור ל-executor לצעד הבא
+    else:
+        return "end" 
+
 def create_graph():
     workflow = StateGraph(AgentState)
     
@@ -86,7 +96,14 @@ def create_graph():
     
     # End states
     workflow.add_edge("consultant", END)
-    workflow.add_edge("executor", END)
+    workflow.add_conditional_edges(
+        "executor",
+        should_continue_play,
+        {
+            "executor": "executor",  # ✅ לולאה - ממשיך לצעד הבא
+            "end": END
+        }
+    )
     workflow.add_edge("setup", END)
     
     return workflow.compile()

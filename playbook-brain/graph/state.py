@@ -20,6 +20,7 @@ class AgentState(TypedDict):
     # --- שדות לוגיקה ---
     analysis: Optional[dict]
     selected_play: Optional[dict]
+    current_step_index: Optional[int]
     
     # --- שדות ניווט (התיקון כאן) ---
     should_analyze: Optional[bool] 

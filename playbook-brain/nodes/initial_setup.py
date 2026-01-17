@@ -82,7 +82,7 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
 
         player_node = {
             "id": player["id"],
-            "type": "playerNode", # Must match React Flow custom node type
+            "type": "player", # Must match React Flow custom node type
             "position": coords,
             "data": {
                 **player,           # Includes stats, skills, name
@@ -101,7 +101,7 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
         
         player_node = {
             "id": player["id"],
-            "type": "playerNode",
+            "type": "player",
             "position": coords,
             "data": {
                 **player,

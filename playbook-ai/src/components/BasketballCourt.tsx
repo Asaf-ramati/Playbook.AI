@@ -182,7 +182,7 @@ useEffect(() => {
       ...player,
       style: {
         ...player.style,
-        transition: 'all 1.5s ease-in-out', // This animates position changes
+        transition: 'all 1.5s ease-in-out',
       }
     })));
   }

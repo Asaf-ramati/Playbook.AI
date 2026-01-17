@@ -1,9 +1,10 @@
-from typing import Annotated, List, TypedDict
+from typing import Annotated, List, TypedDict, Optional
 from langchain_core.messages import BaseMessage
+from langgraph.graph import add_messages
 
 class AgentState(TypedDict):
-    messages: List[BaseMessage]
-    player_positions: List[dict]
-    analysis: str
-    selected_play: dict
-    current_step: int
+    """State המשותף לכל הגרף"""
+    messages: Annotated[List[BaseMessage], add_messages]
+    copilotkit: Optional[dict]  # מידע מה-Frontend
+    analysis: Optional[dict]  # תוצאות הניתוח
+    selected_play: Optional[dict]  # המהלך שנבחר

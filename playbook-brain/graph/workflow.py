@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, START, END
-from .state import AgentState
-from .nodes import analyzer_node, strategist_node, executor_node
+from graph.state import AgentState
+from graph.nodes import analyzer_node, strategist_node, executor_node
 
 def create_graph():
     workflow = StateGraph(AgentState)
@@ -15,3 +15,6 @@ def create_graph():
     workflow.add_edge("executor", END)
     
     return workflow.compile()
+
+
+graph = create_graph()

@@ -7,18 +7,11 @@ import BasketballCourt from '@/src/components/BasketballCourt';
 
 export default function Home() {
   return (
-    <CopilotKit 
-      runtimeUrl="/api/copilot"
-      agent="basketball_coach"
-    >
-      {}
+    <CopilotKit runtimeUrl="/api/copilot" agent="basketball_coach">
       <CopilotSidebar
         defaultOpen={true}
-        clickOutsideToClose={false} 
+        clickOutsideToClose={false}
         hitEscapeToClose={false}
-        onSetOpen={(open) => {
-          if (!open) return;
-        }}
         instructions="You are a basketball tactical assistant. Help the coach manage players and plays on the court."
         labels={{
           title: "Playbook AI Assistant",
@@ -35,7 +28,7 @@ export default function Home() {
             </header>
 
             <div className="grid grid-cols-1 gap-8">
-              {}
+              {/* רכיב המגרש יכיל את ה-useCoAgent שמחבר לסוכן basketball_coach */}
               <BasketballCourt />
             </div>
           </div>

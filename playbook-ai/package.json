@@ -9,9 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@copilotkit/react-core": "^1.51.2",
-    "@copilotkit/react-ui": "^1.51.2",
-    "@copilotkit/runtime": "^1.51.2",
+    "@ag-ui/langgraph": "^0.0.22",
+    "@copilotkit/react-core": "^1.10.6",
+    "@copilotkit/react-ui": "^1.10.6",
+    "@copilotkit/runtime": "^1.10.6",
     "@langchain/core": "^1.1.15",
     "@langchain/langgraph": "^1.1.0",
     "@langchain/openai": "^1.2.2",

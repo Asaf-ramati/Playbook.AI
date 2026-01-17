@@ -1,31 +1,31 @@
 import {
   CopilotRuntime,
-  OpenAIAdapter,
+  ExperimentalEmptyAdapter,
   copilotRuntimeNextJSAppRouterEndpoint,
-} from '@copilotkit/runtime';
-import { LangGraphHttpAgent } from '@copilotkit/runtime/langgraph';
-import { NextRequest } from 'next/server';
-import OpenAI from 'openai';
+} from "@copilotkit/runtime";
+import { LangGraphAgent } from "@ag-ui/langgraph"; // הספריה שגרמה לזה לעבוד
+import { NextRequest } from "next/server";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// 1. שימוש ב-EmptyAdapter כיוון ששרת ה-Python מנהל את הקריאות ל-LLM
+const serviceAdapter = new ExperimentalEmptyAdapter();
 
-const serviceAdapter = new OpenAIAdapter({ openai });
-
+// 2. הגדרת ה-Runtime עם הכתובת שהתקבלה מהפקודה langgraph dev
 const runtime = new CopilotRuntime({
   agents: {
-    basketball_coach: new LangGraphHttpAgent({
-      url: "http://localhost:8000/agent/basketball_coach",
-    }),
+    "basketball_coach": new LangGraphAgent({
+      deploymentUrl: "http://127.0.0.1:2024",
+      graphId: "basketball_coach",
+    }) as any, // הוספת ה-'as any' כאן פותרת את השגיאה הארוכה שקיבלת
   }
 });
 
+// 3. הגדרת ה-Endpoint
 export const POST = async (req: NextRequest) => {
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
-    runtime,
+    runtime, 
     serviceAdapter,
-    endpoint: '/api/copilot',
+    // וודא שזה תואם ל-runtimeUrl ב-CopilotKit Provider ב-layout או ב-page
+    endpoint: "/api/copilot", 
   });
 
   return handleRequest(req);

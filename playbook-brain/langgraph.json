@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "basketball_coach": "./graph/workflow.py:graph"
+  },
+  "env": ".env"
+}

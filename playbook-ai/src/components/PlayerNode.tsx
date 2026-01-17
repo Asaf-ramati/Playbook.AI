@@ -2,10 +2,17 @@ import React from 'react';
 import { Handle, Position } from 'reactflow';
 
 export function PlayerNode({ data }: any) {
+  
+  const handleTransitionEnd = () => {
+    if (data.position === 'PG' && data.isMoving) {
+       data.onStepComplete(); 
+    }
+  };
+
   return (
     <div 
+      onTransitionEnd={handleTransitionEnd}
       className="relative group h-fit" 
-      
       style={{ 
         transition: 'transform 1.5s ease-in-out', 
       }}

@@ -43,10 +43,14 @@ def should_continue_play(state: AgentState):
     בדוק אם יש עוד צעדים בתרגיל.
     אם intent=PLAYBOOK ויש current_step_index > 0, המשך לצעד הבא.
     """
-    if state.get("intent") == "PLAYBOOK" and state.get("current_step_index", 0) > 0:
-        return "executor"  # ✅ חזור ל-executor לצעד הבא
+    intent = state.get("intent")
+    step_index = state.get("current_step_index", 0)
+    
+    # Continue if we're in playbook mode OR waiting for animation
+    if intent in ["PLAYBOOK", "AWAITING_ANIMATION"] and step_index > 0:
+        return "executor"  # ✅ Continue to next step
     else:
-        return "end" 
+        return "end"
 
 def create_graph():
     workflow = StateGraph(AgentState)
@@ -100,7 +104,7 @@ def create_graph():
         "executor",
         should_continue_play,
         {
-            "executor": "executor",  # ✅ לולאה - ממשיך לצעד הבא
+            "executor": "executor", 
             "end": END
         }
     )

@@ -21,6 +21,7 @@ interface PlayerData {
 
 interface AgentState {
   players: PlayerData[];
+  ball_position?: { x: number; y: number } | null;
 }
 
 // קומפוננטה פנימית כדי להשתמש ב-Hook בתוך ה-Provider
@@ -46,7 +47,10 @@ const DashboardContent = () => {
         <div className="grid grid-cols-1 gap-6">
           {/* המגרש מקבל את השחקנים כ-Prop */}
           <div className="border border-gray-800 rounded-lg overflow-hidden">
-             <BasketballCourt players={state.players || []} />
+             <BasketballCourt 
+                players={state.players || []} 
+                ballPosition={state.ball_position || null}
+              />
           </div>
 
           {/* הטבלה מקבלת את אותם שחקנים בדיוק */}

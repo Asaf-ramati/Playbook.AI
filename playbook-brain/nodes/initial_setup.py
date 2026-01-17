@@ -89,7 +89,8 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
                 "side": "ATTACK",   # Frontend uses this for color (Blue)
                 "label": player["name"],
                 "jersey": i + 1,     # Optional visual
-                "color": user_color
+                "color": user_color,
+                "position": slot
             }
         }
         all_players_on_board.append(player_node)

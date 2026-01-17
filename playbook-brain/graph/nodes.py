@@ -2,100 +2,108 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import AIMessage
 from .state import AgentState
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Literal, Optional
+from pydantic import BaseModel, Field
+from .roster import get_team_roster, get_player_by_id,  MOCK_DB
+from .geometry import identify_zone, analyze_spacing
+from coach.playbook import PLAYBOOK
 
 def get_llm():
     """Lazy load the LLM to ensure env vars are loaded first"""
     return ChatOpenAI(model="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
 
-
 def analyzer_node(state: AgentState) -> Dict[str, Any]:
     """
-    Analyzes the current court situation and player positions.
-    Returns tactical insights and spacing analysis.
+    Analyzes the court state using two layers:
+    1. Deterministic Layer: Geometry calculations & Roster data lookup.
+    2. Strategic Layer: LLM analysis based on the enriched data.
     """
-    # Get player positions from state
-    players = state.get('players', [])
+    # Extract raw player data from the shared state
+    raw_players = state.get('players', [])
     
-    # Debug logging
-    print(f"--- ANALYZER: Received {len(players)} players ---")
-    for player in players:
-        player_id = player.get('id', 'unknown')
-        position = player.get('position', {})
-        x = position.get('x', 0)
-        y = position.get('y', 0)
-        print(f"  Player {player_id} at ({x}, {y})")
+    # --- Step 1: Load Team Rosters ---
+    # In a real scenario, we would determine which teams are playing from the state.
+    # For now, we load our mock data.
+    lakers_roster = get_team_roster("lakers_mock")
+    warriors_roster = get_team_roster("warriors_mock")
+    full_roster = lakers_roster + warriors_roster
     
-    # Build a formatted string of player positions for the LLM
-    positions_text = ""
-    team1_players = []
-    team2_players = []
+    # --- Step 2: Geometric Analysis (Spacing) ---
+    # Calculate spacing score and identify clogged areas
+    spacing_data = analyze_spacing(raw_players)
     
-    for player in players:
-        player_id = player.get('id', '')
-        player_data = player.get('data', {})
-        position = player.get('position', {})
+    # --- Step 3: Data Enrichment (Contextual Snapshot) ---
+    # Create a text representation that combines location (Geometry) with skill (Roster)
+    tactical_snapshot = []
+    
+    for p in raw_players:
+        # Identify the geometric zone (e.g., 'CORNER_3', 'PAINT')
+        zone = identify_zone(p['position'])
         
-        name = player_data.get('name', player_id)
-        pos = player_data.get('position', 'N/A')
-        team = player_data.get('team', 'Unknown')
-        x = position.get('x', 0)
-        y = position.get('y', 0)
+        # Fetch player profile to understand capabilities
+        profile = get_player_by_id(p['id'], full_roster)
         
-        player_info = f"{name} ({pos}) at coordinates ({x}, {y})"
-        
-        if 'team1' in player_id:
-            team1_players.append(player_info)
-        elif 'team2' in player_id:
-            team2_players.append(player_info)
-    
-    positions_text = "TEAM 1 (Lakers):\n"
-    positions_text += "\n".join(f"  - {p}" for p in team1_players)
-    positions_text += "\n\nTEAM 2 (Warriors):\n"
-    positions_text += "\n".join(f"  - {p}" for p in team2_players)
-    
-    # Create the analysis prompt
+        if profile:
+            # Logic: Check if the player is in their effective shooting range
+            # We treat 'TOP_3' as a valid 3pt spot
+            is_in_range = zone in profile['shooting_ranges'] or \
+                          (zone == "TOP_3" and "3pt" in profile['shooting_ranges'])
+            
+            position_status = "Effective Range" if is_in_range else "OUT OF POSITION"
+            
+            # Format the info string for the LLM
+            info = (
+                f"- {profile['name']} ({profile['position']}) | "
+                f"Loc: {zone} | Role: {profile['archetype']} | "
+                f"Status: {position_status}"
+            )
+        else:
+            # Fallback for unknown players
+            info = f"- Unknown Player ({p['id']}) at {zone}"
+            
+        tactical_snapshot.append(info)
+
+    snapshot_text = "\n".join(tactical_snapshot)
+
+    # --- Step 4: LLM Tactical Analysis ---
+    # We prompt the model to act as an elite scout, focusing on actionable insights.
     analysis_prompt = f"""
-You are a professional basketball coach analyzing the current court situation.
+    You are an elite NBA Tactical Scout. Analyze the current snapshot derived from optical tracking data.
 
-Current Player Positions:
-{positions_text}
+    **Global Metrics:**
+    - Spacing Score: {spacing_data['score']}/10
+    - Clogged Areas: {', '.join(spacing_data['clogged_pairs']) if spacing_data['clogged_pairs'] else "None"}
 
-Please analyze:
-1. Spacing quality (rate 0-10)
-2. Identify any congested areas
-3. Provide brief tactical recommendations
+    **Player Detail (Position & Context):**
+    {snapshot_text}
 
-Keep your response concise and actionable.
-"""
-    
-    # Get LLM and invoke
+    **Your Task:**
+    Provide a concise analysis focusing on:
+    1. **Offensive Flows:** Who is well-positioned? Who is clogging the paint?
+    2. **Mismatches/Opportunities:** Is a non-shooter outside? Is a slasher open in the paint?
+    3. **Immediate Recommendation:** One sentence on what should happen next.
+
+    Keep it professional, concise, and tactical.
+    """
+
     llm = get_llm()
     response = llm.invoke([{"role": "user", "content": analysis_prompt}])
     
-    # Parse the response to extract spacing score
-    # Simple heuristic: look for a number in the response
-    spacing_score = 7  # default
-    content = response.content.lower()
-    
-    # Try to extract spacing score from response
-    import re
-    score_match = re.search(r'spacing.*?(\d+)', content)
-    if score_match:
-        try:
-            spacing_score = int(score_match.group(1))
-        except:
-            pass
-    
-    # Return updated state
+    # Debug log to see what the agent "sees"
+    print(f"--- ANALYZER OUTPUT ---\n{response.content}\n-----------------------")
+
+    # Update the state with the enriched analysis
     return {
-        "messages": [AIMessage(content=f"Court Analysis:\n{response.content}")],
         "analysis": {
-            "spacing_score": spacing_score,
+            "spacing_score": spacing_data['score'],
+            "is_clogged": spacing_data['is_clogged'],
             "tactical_summary": response.content,
-            "player_count": len(players)
+            "snapshot_text": snapshot_text, # Saved for the Consultant node
+            "player_count": len(raw_players)
         }
     }
+
+
 
 def strategist_node(state: AgentState) -> Dict[str, Any]:
     """בוחר מהלך מתאים על בסיס הניתוח"""
@@ -113,6 +121,91 @@ def strategist_node(state: AgentState) -> Dict[str, Any]:
         "selected_play": play
     }
 
+def analyzer_node(state: AgentState) -> Dict[str, Any]:
+    """
+    מנתח את המגרש בשתי שכבות:
+    1. שכבה דטרמיניסטית (גיאומטריה + נתוני שחקנים).
+    2. שכבה אסטרטגית (LLM שמבין את המשמעות).
+    """
+    raw_players = state.get('players', [])
+    
+    # שלב א': טעינת הסגלים (כדי לדעת מי זה מי)
+    # הערה: בפרודקשן נדע איזה קבוצות משחקות לפי ה-State, כרגע נטען את ה-Mock
+    lakers_roster = get_team_roster("lakers_mock")
+    warriors_roster = get_team_roster("warriors_mock")
+    full_roster = lakers_roster + warriors_roster
+    
+    # שלב ב': חישוב מדדים גיאומטריים (Spacing)
+    spacing_data = analyze_spacing(raw_players)
+    
+    # שלב ג': בניית תמונת מצב מועשרת (Enriched Context)
+    tactical_snapshot = []
+    
+    for p in raw_players:
+        # 1. זיהוי מיקום גיאומטרי (איפה הוא עומד?)
+        zone = identify_zone(p['position'])
+        
+        # 2. שליפת פרופיל שחקן (מי זה ומה הוא יודע לעשות?)
+        profile = get_player_by_id(p['id'], full_roster)
+        
+        if profile:
+            # בדיקת התאמה בין מיקום ליכולת (למשל: סנטר שעומד בשלוש)
+            is_in_range = zone in profile['shooting_ranges'] or \
+                          (zone == "TOP_3" and "3pt" in profile['shooting_ranges'])
+            
+            position_note = "Effective Range" if is_in_range else "OUT OF POSITION"
+            
+            info = (
+                f"- {profile['name']} ({profile['position']}) | "
+                f"Loc: {zone} | Role: {profile['archetype']} | "
+                f"Status: {position_note}"
+            )
+        else:
+            # Fallback לשחקן לא מוכר
+            info = f"- Unknown Player ({p['id']}) at {zone}"
+            
+        tactical_snapshot.append(info)
+
+    snapshot_text = "\n".join(tactical_snapshot)
+
+    # שלב ד': ניתוח ה-LLM (ה"מוח")
+    # אנחנו שואלים אותו שאלות שיתאימו גם לייעוץ וגם לפעולה
+    analysis_prompt = f"""
+    You are an elite NBA Tactical Scout. Analyze the current snapshot derived from optical tracking data.
+
+    **Global Metrics:**
+    - Spacing Score: {spacing_data['score']}/10
+    - Clogged Areas: {', '.join(spacing_data['clogged_pairs']) if spacing_data['clogged_pairs'] else "None"}
+
+    **Player Detail (Position & Context):**
+    {snapshot_text}
+
+    **Your Task:**
+    Provide a concise analysis focusing on:
+    1. **Offensive Flows:** Who is well-positioned? Who is clogging the paint?
+    2. **Mismatches/Opportunities:** Is a non-shooter outside? Is a slasher open in the paint?
+    3. **Immediate Recommendation:** One sentence on what should happen next.
+
+    Keep it professional, concise, and tactical.
+    """
+
+    llm = get_llm()
+    response = llm.invoke([{"role": "user", "content": analysis_prompt}])
+    
+    # הדפסה ללוג כדי שנראה מה הוא "רואה"
+    print(f"--- ANALYZER OUTPUT ---\n{response.content}\n-----------------------")
+
+    # החזרת הנתונים ל-State כדי שה-Router וה-Strategist ישתמשו בהם
+    return {
+        # שומרים את ההודעה האחרונה מהמשתמש (לא דורסים) + מוסיפים לוג פנימי אם רוצים
+        # אבל כאן ה-Graph מצפה לעדכון מפתחות
+        "analysis": {
+            "spacing_score": spacing_data['score'],
+            "is_clogged": spacing_data['is_clogged'],
+            "tactical_summary": response.content,
+            "snapshot_text": snapshot_text # שומרים את הטקסט הגולמי לשימוש ה-Consultant
+        }
+    }
 
 def executor_node(state: AgentState) -> Dict[str, Any]:
     selected_play = state.get("selected_play")

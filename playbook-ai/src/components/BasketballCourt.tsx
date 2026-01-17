@@ -176,11 +176,17 @@ export default function BasketballCourt() {
   const [nodes, setNodes, onNodesChange] = useNodesState(state.players);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  useEffect(() => {
-    if (state.players) {
-      setNodes(state.players);
-    }
-  }, [state.players, setNodes]);
+useEffect(() => {
+  if (state.players) {
+    setNodes(state.players.map((player: any) => ({
+      ...player,
+      style: {
+        ...player.style,
+        transition: 'all 1.5s ease-in-out', // This animates position changes
+      }
+    })));
+  }
+}, [state.players, setNodes]);
 
   // 3. עדכון ה-AI כשגוררים שחקן ידנית במגרש
   const onNodeDragStop = (_: any, node: any) => {

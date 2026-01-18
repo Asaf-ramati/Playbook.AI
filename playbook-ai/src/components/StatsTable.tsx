@@ -6,8 +6,8 @@ interface PlayerStats {
   pts: number;
   ast: number;
   trb: number;
-  stl: number;
-  blk: number;
+  stl?: number;
+  blk?: number;
 }
 
 interface PlayerNode {

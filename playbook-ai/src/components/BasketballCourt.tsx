@@ -117,7 +117,7 @@ export default function BasketballCourt({ players, ballPosition }: BasketballCou
             backgroundPosition: 'center top',
             width: '100%',
             height: '100%',
-            filter: 'invert(1) brightness(0.8)', 
+            filter: 'none', 
             clipPath: 'inset(0 0 0 0)',
           }}
         />

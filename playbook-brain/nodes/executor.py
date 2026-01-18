@@ -35,6 +35,17 @@ def _map_roles_to_ids(players: List[Dict]) -> Dict[str, str]:
             
     return role_map
 
+
+def clamp_to_court(position: Dict[str, float]) -> Dict[str, float]:
+    """Ensure position stays within court boundaries"""
+    COURT_WIDTH = 660
+    COURT_HEIGHT = 550
+    
+    return {
+        "x": max(0, min(position["x"], COURT_WIDTH)),
+        "y": max(0, min(position["y"], COURT_HEIGHT))
+    }
+
 # --- The Node Logic ---
 
 def executor_node(state: AgentState) -> Dict[str, Any]:
@@ -75,7 +86,6 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
                 role_to_real_id = _map_roles_to_ids(current_players)
                 ball_pos_in_step = None
 
-                # 2. Calculate Moves for this Step
                 for item in step_data:
                     role_id = item.get("id") 
                     target_pos = {"x": item["x"], "y": item["y"]}
@@ -84,9 +94,12 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
                         current_ball_pos = target_pos
                         ball_pos_in_step = target_pos
                     else:
-                        real_id = role_to_real_id.get(role_id)
-                        if real_id:
-                            updates_map[real_id] = target_pos
+                        if "-" in role_id:
+                            updates_map[role_id] = target_pos
+                        else:
+                            real_id = role_to_real_id.get(role_id)
+                            if real_id:
+                                updates_map[real_id] = target_pos
 
                 # 3. Determine New Ball Handler
                 if ball_pos_in_step:
@@ -187,36 +200,39 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
     # Apply Updates to State (Unified Logic)
     # ---------------------------------------------------------
     
+   # 3. עדכון המיקומים - ONE LOOP ONLY!
     updated_players_list = []
     final_ball_pos = current_ball_pos
-    
-    # 1. נמצא קודם את השחקן שאמור להחזיק בכדור
-    target_handler = next((p for p in current_players if p["id"] == new_ball_handler), None)
-    
-    # 2. בדיקת בטיחות: האם הוא שחקן התקפה?
-    # אם הוא לא מהתקפה, נשאיר את המחזיק הקודם או נבטל את ההחזקה
-    if target_handler and target_handler.get("data", {}).get("side") != "ATTACK":
-        print(f"⚠️ Blocked ball transfer to defender: {new_ball_handler}")
-        new_ball_handler = current_ball_handler # מחזירים למחזיק המקורי
-    
-    # 3. עדכון המיקומים
+
     for player in current_players:
         p_id = player["id"]
         new_props = player.copy()
         
-        # עדכון מיקום שחקן
-        if p_id in updates_map:
-            new_props["position"] = updates_map[p_id]
+        # A. Handle defense movement FIRST (calculate guarding position)
+        if player['data'].get('side') == 'DEFENSE':
+            target_id = player['data'].get('guarding_player_id')
+            if target_id and target_id in updates_map:
+                target_pos = updates_map[target_id]
+                # Add defense position to updates_map
+                updates_map[p_id] = {
+                    "x": target_pos["x"] + 25,
+                    "y": target_pos["y"] + 25
+                }
         
-        # הצמדת הכדור לידיים של שחקן ההתקפה בלבד
+        # B. Apply position update (for both offense AND defense)
+        if p_id in updates_map:
+            new_props["position"] = clamp_to_court(updates_map[p_id])
+        
+        # C. Update ball position if this is the handler
         if p_id == new_ball_handler:
-            # הכדור תמיד יקבל את המיקום של המחזיק (התקפה בלבד)
             final_ball_pos = new_props["position"]
-            
+        
+        # D. Add to list (ONLY ONCE!)
         updated_players_list.append(new_props)
-    
+
+    # Now return the updated state
     return {
-        "players": updated_players_list,
+        "players": updated_players_list,  # ✅ Now has 10 players, not 20!
         "ball_position": final_ball_pos,
         "ball_handler_id": new_ball_handler,
         "current_step_index": next_step_index,

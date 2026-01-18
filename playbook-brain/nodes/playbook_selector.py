@@ -26,5 +26,4 @@ def playbook_selector_node(state: AgentState) -> Dict[str, Any]:
     # We return 'selected_play' so the Executor can access it
     return {
         "selected_play": selected_play,
-        "messages": [AIMessage(content=msg)]
     }

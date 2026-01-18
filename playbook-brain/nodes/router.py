@@ -9,7 +9,7 @@ class RouterDecision(BaseModel):
     """
     Decision structure including SETUP for NBA team selection.
     """
-    intent: Literal["CONSULT", "PLAYBOOK", "ADJUST", "SETUP", "PASS"] = Field(
+    intent: Literal["CONSULT", "PLAYBOOK", "ADJUST", "SETUP", "PASS", "GENERATE"] = Field(
         ...,
         description="The categorization of the user's request."
     )
@@ -63,11 +63,17 @@ def router_node(state: AgentState) -> Dict[str, Any]:
          b) User asks to run a play that is look familiar from the playbook, or specific movement.
        - ACTION: You MUST map the request to the closest `play_id` from the AVAILABLE PLAYS list.
          * (PNR, Horns, etc. - keep your existing list here)
+    
+    3. **GENERATE** (Custom Movements):  
+   - CHOOSE THIS IF:
+     a) Teams ARE set.
+     b) User asks for specific player movements that DON'T match any play.
+     c) Examples: "Move LeBron to the post", "Send AD to the corner"
 
-    3. **ADJUST** (Manual Changes):
+    4. **ADJUST** (Manual Changes):
        - CHOOSE THIS IF: User wants to move a specific player manually (e.g., "Move LeBron to the corner").
 
-    4. **CONSULT** (Strategic Advice):
+    5. **CONSULT** (Strategic Advice):
        - CHOOSE THIS IF: 
          a) User asks "what", "how", "why" questions.
          b) Greetings or general conversation.

@@ -4,8 +4,8 @@ NBA Teams Constants & Court Configuration
 """
 
 # --- הגדרות מגרש (נחוץ ל-Frontend ולחישובי תנועה) ---
-COURT_WIDTH = 800
-COURT_HEIGHT = 600
+COURT_WIDTH = 660
+COURT_HEIGHT = 550
 
 # --- רשימת כל קבוצות ה-NBA ---
 NBA_TEAMS = {

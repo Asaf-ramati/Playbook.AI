@@ -75,6 +75,7 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
         slot = position_slots[i] if i < len(position_slots) else "Bench"
         coords = STARTING_POSITIONS_OFFENSE.get(slot, {"x": 0, "y": 0})
         
+        
         # Determine if this player starts with the ball (The PG)
         if slot == "PG":
             ball_init_pos = coords
@@ -82,13 +83,13 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
 
         player_node = {
             "id": player["id"],
-            "type": "player", # Must match React Flow custom node type
+            "type": "player", 
             "position": coords,
             "data": {
-                **player,           # Includes stats, skills, name
-                "side": "ATTACK",   # Frontend uses this for color (Blue)
+                **player,          
+                "side": "ATTACK",   
                 "label": player["name"],
-                "jersey": i + 1,     # Optional visual
+                "jersey": i + 1,     
                 "color": user_color,
                 "position": slot
             }
@@ -99,6 +100,7 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
     for i, player in enumerate(opp_starters):
         slot = position_slots[i] if i < len(position_slots) else "Bench"
         coords = STARTING_POSITIONS_DEFENSE.get(slot, {"x": 800, "y": 0})
+        target_id = user_starters[i]["id"] if i < len(user_starters) else None
             
         player_node = {
             "id": player["id"],
@@ -106,8 +108,9 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
             "position": coords,
             "data": {
                 **player,
-                "side": "DEFENSE", # Frontend uses this for color (Red)
+                "side": "DEFENSE", #
                 "label": player["name"],
+                "guarding_player_id": target_id,
                 "jersey": i + 10,
                 "color": opp_color
             }

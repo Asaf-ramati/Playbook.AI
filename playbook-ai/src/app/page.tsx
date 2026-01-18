@@ -1,12 +1,11 @@
 "use client";
 
-import { CopilotKit, useCoAgent } from "@copilotkit/react-core"; // 👈 הוספנו useCoAgent
+import { CopilotKit, useCoAgent, useCopilotChat } from "@copilotkit/react-core"; // 1. הוספנו את useCopilotChat
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
 import BasketballCourt from '@/src/components/BasketballCourt';
-import { StatsTable } from '@/src/components/StatsTable'; // 👈 הייבוא של הטבלה החדשה
+import { StatsTable } from '@/src/components/StatsTable';
 
-// הגדרת טיפוס המידע שמגיע מהסוכן (אפשר גם בקובץ נפרד types.ts)
 interface PlayerData {
   id: string;
   position: { x: number; y: number };
@@ -24,15 +23,16 @@ interface AgentState {
   ball_position?: { x: number; y: number } | null;
 }
 
-// קומפוננטה פנימית כדי להשתמש ב-Hook בתוך ה-Provider
 const DashboardContent = () => {
-  // 👇 כאן אנחנו מושכים את המידע מהסוכן
   const { state } = useCoAgent<AgentState>({
     name: "basketball_coach",
     initialState: {
       players: [],
     },
   });
+
+  // 2. שימוש ב-Hook כדי לדעת אם ה-AI חושב כרגע
+  const { isLoading } = useCopilotChat();
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -42,18 +42,26 @@ const DashboardContent = () => {
             <h1 className="text-4xl font-bold tracking-tighter text-orange-500">PLAYBOOK.AI</h1>
             <p className="text-gray-400">Advanced Tactical Basketball Strategy</p>
           </div>
+
+          {/* 3. אינדיקציה ויזואלית שמופיעה כשה-AI חושב */}
+          {isLoading && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-full border border-orange-500/50 animate-pulse">
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" />
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce delay-75" />
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce delay-150" />
+              <span className="text-sm font-medium text-orange-400 ml-2">Coach is thinking...</span>
+            </div>
+          )}
         </header>
 
         <div className="grid grid-cols-1 gap-6">
-          {/* המגרש מקבל את השחקנים כ-Prop */}
-          <div className="border border-gray-800 rounded-lg overflow-hidden">
+          <div className={`border border-gray-800 rounded-lg overflow-hidden transition-opacity duration-300 ${isLoading ? 'opacity-80' : 'opacity-100'}`}>
              <BasketballCourt 
                 players={state.players || []} 
                 ballPosition={state.ball_position || null}
               />
           </div>
 
-          {/* הטבלה מקבלת את אותם שחקנים בדיוק */}
           <StatsTable players={state.players || []} />
         </div>
       </div>

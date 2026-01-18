@@ -7,7 +7,8 @@ from nodes import (
     playbook_selector_node,
     executor_node,
     initial_setup_node,
-    greeter_node  # ADD THIS
+    greeter_node,
+    generative_play_node
 )
 
 def should_analyze(state: AgentState):
@@ -31,8 +32,9 @@ def route_next_step(state: AgentState):
     Determines the next node based on the Router's decision.
     """
     intent = state.get("intent")
-    
-    if intent == "SETUP":
+    if intent == "GENERATE":
+        return "generative_play"
+    elif intent == "SETUP":
         return "setup"
     elif intent == "CONSULT":
         return "consultant"
@@ -61,13 +63,14 @@ def create_graph():
     workflow = StateGraph(AgentState)
     
     # --- Add Nodes ---
-    workflow.add_node("greeter", greeter_node)  # ADD THIS
+    workflow.add_node("greeter", greeter_node)  
     workflow.add_node("analyzer", analyzer_node)
     workflow.add_node("router", router_node)
     workflow.add_node("consultant", consultant_node)
     workflow.add_node("playbook_selector", playbook_selector_node)
     workflow.add_node("executor", executor_node)
     workflow.add_node("setup", initial_setup_node)
+    workflow.add_node("generative_play", generative_play_node)
     
     # --- Define Flow ---
     
@@ -96,12 +99,14 @@ def create_graph():
             "setup": "setup",
             "consultant": "consultant",
             "playbook_selector": "playbook_selector",
+            "generative_play": "generative_play",
             "executor": "executor"
         }
     )
     
     # 5. Closing the Loops
     workflow.add_edge("playbook_selector", "executor")
+    workflow.add_edge("generative_play", "executor")  
     
     # End states
     workflow.add_edge("consultant", END)

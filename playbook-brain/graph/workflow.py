@@ -13,13 +13,18 @@ from nodes import (
 def should_analyze(state: AgentState):
     """
     Determines the next step after greeter.
+    Always go to analyzer for basketball queries.
     """
-    if state.get("route_to") == "router":
-        return "router"  # Skip analyzer, go to router
-    elif state.get("should_analyze", True):
-        return "analyzer"
-    else:
+    # Check if it's a casual message that should end
+    if state.get("intent") == "CASUAL":
         return "end"
+    
+    setup_complete = state.get("setup_complete", False)
+    
+    if not setup_complete:
+        return "router"
+    
+    return "analyzer"
 
 def route_next_step(state: AgentState):
     """
@@ -33,7 +38,7 @@ def route_next_step(state: AgentState):
         return "consultant"
     elif intent == "PLAYBOOK":
         return "playbook_selector"
-    elif intent == "ADJUST":
+    elif intent in ["ADJUST", "PASS"]: 
         return "executor"
         
     return "consultant"
@@ -75,7 +80,7 @@ def create_graph():
         should_analyze,
         {
             "analyzer": "analyzer",
-            "router": "router", 
+            "router": "router",
             "end": END
         }
     )

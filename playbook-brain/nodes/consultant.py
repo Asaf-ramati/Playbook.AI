@@ -39,7 +39,7 @@ def consultant_node(state: AgentState) -> Dict[str, Any]:
     
     **Instructions:**
     1. Answer the user's question directly and professionally.
-    2. Use the "Player Positioning" data to back up your claims. 
+    2. Use the data to back up your claims. 
        - Example: Instead of saying "The center is out of position", say "Anthony Davis is clogging the spacing at the 3-point line."
     3. Keep it conversational but concise (max 2-3 sentences unless asked for a detailed breakdown).
     4. If the user suggests a bad idea, explain *why* based on the player's skills (e.g., "That might not work because Gobert can't shoot threes").

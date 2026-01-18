@@ -71,7 +71,7 @@ export default function Home() {
         instructions="You are a basketball tactical assistant. Help the coach manage players and plays on the court."
         labels={{
           title: "Playbook AI Assistant",
-          initial: "שלום קואוץ'! המגרש מוכן. איזה תרגיל נבנה היום?",
+          initial: "Hello Coach! The court is ready. What play should we run today?",
         }}
       >
         <DashboardContent />

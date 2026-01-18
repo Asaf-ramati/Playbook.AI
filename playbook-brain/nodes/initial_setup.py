@@ -99,7 +99,7 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
     for i, player in enumerate(opp_starters):
         slot = position_slots[i] if i < len(position_slots) else "Bench"
         coords = STARTING_POSITIONS_DEFENSE.get(slot, {"x": 800, "y": 0})
-        
+            
         player_node = {
             "id": player["id"],
             "type": "player",
@@ -120,6 +120,8 @@ def initial_setup_node(state: AgentState) -> Dict[str, Any]:
         "ball_position": ball_init_pos,   # The ball starts at the PG's xy
         "ball_handler_id": ball_handler_id, # The PG holds the ball
         "setup_complete": True,
+        "current_step_index": 0,
+        "intent": None,
         "messages": [
             AIMessage(content=f"Court initialized: {user_team_abbr} (Offense) vs {opp_team_abbr} (Defense). Ball is with {user_starters[0]['name']}.")
         ]

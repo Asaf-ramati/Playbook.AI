@@ -9,7 +9,7 @@ class RouterDecision(BaseModel):
     """
     Decision structure including SETUP for NBA team selection.
     """
-    intent: Literal["CONSULT", "PLAYBOOK", "ADJUST", "SETUP"] = Field(
+    intent: Literal["CONSULT", "PLAYBOOK", "ADJUST", "SETUP", "PASS"] = Field(
         ...,
         description="The categorization of the user's request."
     )
@@ -29,6 +29,10 @@ def router_node(state: AgentState) -> Dict[str, Any]:
 
     print(f"\n🎯 ROUTER NODE | Current State: {current_user_team} vs {current_opp_team}")
 
+    if "pass" in user_message.lower() or "מסור" in user_message:
+        print("🏀 PASS detected!")
+        return {"intent": "PASS"}
+
     # Generate a formatted list of plays with descriptions for better context
     play_descriptions = "\n".join([f"- {pid}: {data['name']} ({data['description']})" for pid, data in PLAYBOOK.items()])
 
@@ -44,34 +48,33 @@ def router_node(state: AgentState) -> Dict[str, Any]:
 
     **DECISION LOGIC (Order of Importance):**
 
-    1. **SETUP** (Team Selection):
+    1. **SETUP** (Initialization & Reset):
        - CHOOSE THIS IF:
          a) Teams are NOT set yet (Current is None).
-         b) User EXPLICITLY asks to CHANGE teams (e.g., "Switch to Celtics", "Actually I want the Heat").
-       - ACTION: Extract `user_team` and `opponent_team`.
+         b) User EXPLICITLY asks to CHANGE teams (e.g., "Switch to Celtics").
+         c) User wants to RESET the court or START OVER (e.g., "Reset", "Put everyone back to start", "Organise the players like in the beginning", "Clear the court").
+       - ACTION: 
+         * For Team Changes: Extract `user_team` and `opponent_team`.
+         * For Resets: Keep current teams but set a flag (like `intent: SETUP`) to trigger the reset logic.
 
     2. **PLAYBOOK** (Running Tactics):
        - CHOOSE THIS IF:
          a) Teams ARE set.
-         b) User asks to run a play, tactic, or specific movement.
+         b) User asks to run a play that is look familiar from the playbook, or specific movement.
        - ACTION: You MUST map the request to the closest `play_id` from the AVAILABLE PLAYS list.
-         * "Pick and Roll" / "P&R" -> PNR_TOP_CENTRAL (unless a specific type like "Wing" or "Spanish" is requested)
-         * "Horns" -> SET_HORNS_MAIN
-         * "Iso" / "Isolation" -> SET_ISO_TOP
-         * "Ghost Screen" -> PNR_GHOST_SCREEN
-         * "Iverson" -> MOTION_IVERSON_CUT
-         * "5 Out" -> SET_5_OUT
-         * "Double Drag" -> PNR_DOUBLE_DRAG
+         * (PNR, Horns, etc. - keep your existing list here)
 
     3. **ADJUST** (Manual Changes):
        - CHOOSE THIS IF: User wants to move a specific player manually (e.g., "Move LeBron to the corner").
 
-    4. **CONSULT** (General Talk):
-       - CHOOSE THIS IF: User asks a question or greets, without asking for an action.
+    4. **CONSULT** (Strategic Advice):
+       - CHOOSE THIS IF: 
+         a) User asks "what", "how", "why" questions.
+         b) Greetings or general conversation.
 
     **OUTPUT INSTRUCTIONS:**
+    - If intent is SETUP and it's a RESET request, return `intent: SETUP` and reuse current team names.
     - If intent is PLAYBOOK, you MUST fill `play_id` with the EXACT string from the list above.
-    - If intent is SETUP, you MUST fill `user_team` and `opponent_team`.
     """
 
     decision = structured_llm.invoke(router_prompt)
@@ -98,10 +101,6 @@ def router_node(state: AgentState) -> Dict[str, Any]:
     selected_play_data = None
     if decision.intent == "PLAYBOOK" and decision.play_id:
         selected_play_data = PLAYBOOK.get(decision.play_id)
-        if selected_play_data:
-            print(f"✅ Play Selected: {selected_play_data['name']}")
-        else:
-            print(f"❌ Error: Play ID '{decision.play_id}' not found in PLAYBOOK.")
 
     return {
         "intent": decision.intent,

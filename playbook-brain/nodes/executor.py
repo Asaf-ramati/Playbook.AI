@@ -112,7 +112,7 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
                     # אנחנו שולחים סטטוס מיוחד שממתין ל-Frontend
                     final_intent = "AWAITING_ANIMATION" 
                     action_description = f"Executing Step {current_step_index + 1}/{total_steps}..."
-                    time.sleep(1.5)
+                    time.sleep(2.5)
                     
             else:
                 action_description = "Play already completed."
@@ -148,26 +148,73 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
         final_intent = None # סיום פעולה ידנית
 
     # ---------------------------------------------------------
+    # Case C: Pass the Ball
+    # ---------------------------------------------------------
+    elif intent == "PASS":
+        llm = get_llm()
+        user_command = state["messages"][-1].content
+        
+        # רשימת השחקנים לצורך זיהוי שמות
+        player_list_str = "\n".join([f"- {p['id']} ({p['data']['name']})" for p in current_players if p['data']['side'] == 'ATTACK'])
+        
+        pass_prompt = f"""
+        You are the Ball Controller. Identify the target player for the pass.
+
+        **Offense Players:**
+        {player_list_str}
+
+        **Command:** "{user_command}"
+
+        **IMPORTANT:** Return ONLY the player ID (e.g., "lal-lebron-james"), nothing else.
+        Do NOT return the player name, do NOT add any explanation.
+
+        Player ID:
+        """
+        
+        target_player_id = llm.invoke(pass_prompt).content.strip()
+        
+        # מציאת השחקן במערך הנוכחי כדי לקבל את המיקום שלו
+        target_player = next((p for p in current_players if p['id'] == target_player_id), None)
+        
+        if target_player:
+            new_ball_handler = target_player_id
+            current_ball_pos = target_player["position"]
+            action_description = f"Pass complete to {target_player['data']['name']}."
+        else:
+            action_description = "Pass failed: Target player not found."
+
+    # ---------------------------------------------------------
     # Apply Updates to State (Unified Logic)
     # ---------------------------------------------------------
     
     updated_players_list = []
     final_ball_pos = current_ball_pos
     
+    # 1. נמצא קודם את השחקן שאמור להחזיק בכדור
+    target_handler = next((p for p in current_players if p["id"] == new_ball_handler), None)
+    
+    # 2. בדיקת בטיחות: האם הוא שחקן התקפה?
+    # אם הוא לא מהתקפה, נשאיר את המחזיק הקודם או נבטל את ההחזקה
+    if target_handler and target_handler.get("data", {}).get("side") != "ATTACK":
+        print(f"⚠️ Blocked ball transfer to defender: {new_ball_handler}")
+        new_ball_handler = current_ball_handler # מחזירים למחזיק המקורי
+    
+    # 3. עדכון המיקומים
     for player in current_players:
         p_id = player["id"]
         new_props = player.copy()
         
+        # עדכון מיקום שחקן
         if p_id in updates_map:
             new_props["position"] = updates_map[p_id]
         
+        # הצמדת הכדור לידיים של שחקן ההתקפה בלבד
         if p_id == new_ball_handler:
+            # הכדור תמיד יקבל את המיקום של המחזיק (התקפה בלבד)
             final_ball_pos = new_props["position"]
             
         updated_players_list.append(new_props)
-
-    # --- Unified Return ---
-    # מחזירים את המשתנים שחושבו בתוך הבלוקים למעלה
+    
     return {
         "players": updated_players_list,
         "ball_position": final_ball_pos,

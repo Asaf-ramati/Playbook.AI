@@ -15,11 +15,12 @@ def analyzer_node(state: AgentState) -> Dict[str, Any]:
     raw_players = state.get('players', [])
     
     # --- Step 1: Load Team Rosters ---
-    # In a real scenario, we would determine which teams are playing from the state.
-    # For now, we load our mock data.
-    lakers_roster = get_team_roster("lakers_mock")
-    warriors_roster = get_team_roster("warriors_mock")
-    full_roster = lakers_roster + warriors_roster
+    user_team = state.get("user_team")  # "LAL"
+    opp_team = state.get("opponent_team")  # "BOS"
+    user_roster = get_team_roster(user_team)
+    opp_roster = get_team_roster(opp_team)
+
+    full_roster = user_roster + opp_roster
     
     # --- Step 2: Geometric Analysis (Spacing) ---
     # Calculate spacing score and identify clogged areas

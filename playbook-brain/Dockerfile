@@ -13,8 +13,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY . /app
 
+# Make start script executable
+RUN chmod +x start.sh
+
 # Expose port (Railway will use PORT env var)
 EXPOSE 8000
 
 # Start LangGraph dev server
-CMD ["python", "-m", "langgraph_cli", "dev", "--port", "8000", "--host", "0.0.0.0"]
+CMD ["./start.sh"]

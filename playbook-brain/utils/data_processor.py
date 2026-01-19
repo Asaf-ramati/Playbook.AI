@@ -1,7 +1,7 @@
 import pandas as pd
 from graph.roster import PlayerProfile
 
-def load_nba_data_from_csv(file_path: str = "nba_stats_cleaned.csv"):
+def load_nba_data_from_csv(file_path: str = "data/nba_stats_cleaned.csv"):
     # Read the cleaned file
     df = pd.read_csv(file_path)
 

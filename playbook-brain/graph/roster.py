@@ -29,7 +29,7 @@ def get_team_roster(team_abbr: str) -> List[Dict]:
         # Dynamic loading to prevent Circular Import
         from utils.data_processor import load_nba_data_from_csv
         # Make sure the name here matches your cleaned file
-        NBA_DATA = load_nba_data_from_csv("nba_stats_cleaned.csv")
+        NBA_DATA = load_nba_data_from_csv("data/nba_stats_cleaned.csv")
 
     return NBA_DATA.get(team_abbr, [])
 

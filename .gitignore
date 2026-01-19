@@ -80,7 +80,7 @@ ENV/
 env/
 .venv
 
-# LangGraph cache files (קבצי זיכרון זמני)
+# LangGraph cache files
 .langgraph_api/
 *.pckl
 

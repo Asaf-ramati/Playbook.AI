@@ -15,10 +15,10 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { COURT_WIDTH, COURT_HEIGHT } from '@/src/lib/constants';
 
-// --- הגדרת ה-Props שהרכיב מקבל ---
+// Component Props definition
 interface BasketballCourtProps {
-  players: any[];         // רשימת השחקנים שמגיעה מ-page.tsx
-  ballPosition?: { x: number; y: number } | null; // מיקום הכדור
+  players: any[];         // List of players from page.tsx
+  ballPosition?: { x: number; y: number } | null; // Ball position
 }
 
 const nodeTypes = {
@@ -38,44 +38,41 @@ const BALL_STYLE = {
   zIndex: 1000 
 };
 
-// 👇 הרכיב מקבל את הנתונים כ-Props
+// Component receives data as Props
 export default function BasketballCourt({ players, ballPosition }: BasketballCourtProps) {
 
-  // ניהול ה-Nodes הפנימי של ReactFlow (לצורך אנימציות ורינדור)
-  const [nodes, setNodes, onNodesChange] = useNodesState([]); 
+  // Internal ReactFlow Nodes management (for animations and rendering)
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   useEffect(() => {
-    // בודקים אם קיבלנו מערך שחקנים תקין
+    // Check if we received a valid players array
     if (players && Array.isArray(players)) {
-      
-      const gameNodes: any[] = [...players]; 
 
-      // 2. אם יש מיקום לכדור, הוסף אותו כ-Node עצמאי
+      const gameNodes: any[] = [...players];
+
+      // 2. If there's a ball position, add it as an independent Node
       if (ballPosition) {
         gameNodes.push({
           id: 'ball',
-          type: 'default', 
+          type: 'default',
           data: { label: '🏀' },
           position: ballPosition,
-          draggable: false, 
+          draggable: false,
           style: BALL_STYLE,
         });
       }
 
-      // 3. הוסף אנימציה לכולם ועדכן את הלוח
+      // 3. Add animation to all and update the board
       setNodes(gameNodes.map((node: any) => ({
         ...node,
         style: {
           ...node.style,
-          transition: 'all 1.0s ease-in-out', // האנימציה החלקה
+          transition: 'all 1.0s ease-in-out', // Smooth animation
         }
       })));
     }
-  }, [players, ballPosition, setNodes]); // 👈 מאזינים לשינויים ב-Props
-
-  // הערה: כרגע ביטלתי את עדכון ה-State בגרירה כי ה-State נמצא למעלה.
-  // אם תרצה להחזיר גרירה שמעדכנת את ה-AI, נצטרך להעביר פונקציה onPlayerMove מהאבא.
+  }, [players, ballPosition, setNodes]); // Listen to Props changes
   
   return (
     <div className="relative w-full h-[600px] bg-[#1a1a1a] rounded-xl overflow-hidden border-2 border-zinc-800 shadow-2xl">
@@ -85,7 +82,7 @@ export default function BasketballCourt({ players, ballPosition }: BasketballCou
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        nodesDraggable={true} // אפשר לגרור ויזואלית, אבל זה יתאפס בעדכון הבא
+        nodesDraggable={true} // Can drag visually, but will reset on next update
         elementsSelectable={true}
         nodesConnectable={false}
         

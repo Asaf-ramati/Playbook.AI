@@ -7,14 +7,14 @@ export interface PlayerMovement {
 export interface TacticalPlay {
   name: string;
   description: string;
-  steps: PlayerMovement[][]; // מערך של שלבים, בכל שלב רשימת תנועות של שחקנים
+  steps: PlayerMovement[][]; // Array of steps, each step contains a list of player movements
 }
 
-// זה ה-State של ה-LangGraph שלנו
+// This is our LangGraph State
 export interface AgentState {
-  playerPositions: any[];   // מה המצב כרגע במגרש
-  userQuery: string;        // מה המשתמש ביקש
-  selectedPlay?: TacticalPlay; // איזה תרגיל נבחר
-  currentStep: number;      // באיזה שלב של התרגיל אנחנו (למהלכים רב-שלביים)
-  analysis?: string;        // התובנות של ה-Analyzer
+  playerPositions: any[];   // Current state on the court
+  userQuery: string;        // What the user requested
+  selectedPlay?: TacticalPlay; // Which drill was selected
+  currentStep: number;      // Which step of the drill we're at (for multi-step movements)
+  analysis?: string;        // Insights from the Analyzer
 }

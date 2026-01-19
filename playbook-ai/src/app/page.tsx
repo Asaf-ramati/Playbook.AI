@@ -1,6 +1,6 @@
 "use client";
 
-import { CopilotKit, useCoAgent, useCopilotChat } from "@copilotkit/react-core"; // 1. הוספנו את useCopilotChat
+import { CopilotKit, useCoAgent, useCopilotChat } from "@copilotkit/react-core";
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
 import BasketballCourt from '@/src/components/BasketballCourt';
@@ -31,7 +31,7 @@ const DashboardContent = () => {
     },
   });
 
-  // 2. שימוש ב-Hook כדי לדעת אם ה-AI חושב כרגע
+  // Hook to track if AI is currently processing
   const { isLoading } = useCopilotChat();
 
   return (
@@ -43,7 +43,7 @@ const DashboardContent = () => {
             <p className="text-gray-400">Advanced Tactical Basketball Strategy</p>
           </div>
 
-          {/* 3. אינדיקציה ויזואלית שמופיעה כשה-AI חושב */}
+          {/* Visual indicator shown when AI is thinking */}
           {isLoading && (
             <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-full border border-orange-500/50 animate-pulse">
               <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" />

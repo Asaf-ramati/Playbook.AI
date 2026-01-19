@@ -10,17 +10,17 @@ export function PlayerNode({ data }: any) {
   };
 
   return (
-    <div 
+    <div
       onTransitionEnd={handleTransitionEnd}
-      className="relative group h-fit" 
-      style={{ 
-        transition: 'transform 1.5s ease-in-out', 
+      className="relative group h-fit"
+      style={{
+        transition: 'transform 1.5s ease-in-out',
       }}
     >
-      {/* עיגול השחקן */}
-      <div 
+      {/* Player circle */}
+      <div
         className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center shadow-2xl transition-transform duration-200 group-hover:scale-110 active:scale-95 cursor-grab"
-        style={{ 
+        style={{
           backgroundColor: data.color || '#1d428a',
           boxShadow: `0 1px 3px rgba(0,0,0,0.3)`
         }}

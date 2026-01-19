@@ -61,13 +61,13 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
     current_ball_pos = state.get("ball_position")
     current_step_index = state.get("current_step_index", 0)
     
-    updates_map = {} 
-    new_ball_handler = current_ball_handler 
-    
-    # משתני ברירת מחדל לערכי החזרה
+    updates_map = {}
+    new_ball_handler = current_ball_handler
+
+    # Default return values
     action_description = ""
     next_step_index = 0
-    final_intent = None # ברירת מחדל: מסיים את הפעולה
+    final_intent = None # Default: ends the operation
 
     # ---------------------------------------------------------
     # Case A: Execute a Pre-defined Play (Step-by-Step)
@@ -111,19 +111,19 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
                             handler_found_in_step = True
                             break
 
-                # --- לוגיקת חישוב הצעד הבא (תוקנה) ---
+                # --- Next step calculation logic (fixed) ---
                 calc_next_index = current_step_index + 1
-                
-                # אם סיימנו את כל הצעדים
+
+                # If we've completed all steps
                 if calc_next_index >= total_steps:
-                    next_step_index = 0 # איפוס לפעם הבאה
-                    final_intent = None # סיום התהליך בגרף
+                    next_step_index = 0 # Reset for next time
+                    final_intent = None # End the graph process
                     action_description = f"Play '{play['name']}' Complete."
                 else:
                     next_step_index = calc_next_index
-                    # כאן אנחנו משתמשים בשיטת ה-Handshake:
-                    # אנחנו שולחים סטטוס מיוחד שממתין ל-Frontend
-                    final_intent = "AWAITING_ANIMATION" 
+                    # Using the Handshake method:
+                    # Send a special status that waits for Frontend
+                    final_intent = "AWAITING_ANIMATION"
                     action_description = f"Executing Step {current_step_index + 1}/{total_steps}..."
                     time.sleep(2.5)
                     
@@ -158,7 +158,7 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
             updates_map[move.player_id] = {"x": move.x, "y": move.y}
             
         action_description = "Manual adjustment executed."
-        final_intent = None # סיום פעולה ידנית
+        final_intent = None # End manual operation
 
     # ---------------------------------------------------------
     # Case C: Pass the Ball
@@ -166,8 +166,8 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
     elif intent == "PASS":
         llm = get_llm()
         user_command = state["messages"][-1].content
-        
-        # רשימת השחקנים לצורך זיהוי שמות
+
+        # List of players for name identification
         player_list_str = "\n".join([f"- {p['id']} ({p['data']['name']})" for p in current_players if p['data']['side'] == 'ATTACK'])
         
         pass_prompt = f"""
@@ -185,8 +185,8 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
         """
         
         target_player_id = llm.invoke(pass_prompt).content.strip()
-        
-        # מציאת השחקן במערך הנוכחי כדי לקבל את המיקום שלו
+
+        # Find the player in the current array to get their position
         target_player = next((p for p in current_players if p['id'] == target_player_id), None)
         
         if target_player:
@@ -199,15 +199,15 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
     # ---------------------------------------------------------
     # Apply Updates to State (Unified Logic)
     # ---------------------------------------------------------
-    
-   # 3. עדכון המיקומים - ONE LOOP ONLY!
+
+   # 3. Update positions - ONE LOOP ONLY!
     updated_players_list = []
     final_ball_pos = current_ball_pos
 
     for player in current_players:
         p_id = player["id"]
         new_props = player.copy()
-        
+
         # A. Handle defense movement FIRST (calculate guarding position)
         if player['data'].get('side') == 'DEFENSE':
             target_id = player['data'].get('guarding_player_id')
@@ -218,21 +218,21 @@ def executor_node(state: AgentState) -> Dict[str, Any]:
                     "x": target_pos["x"] + 25,
                     "y": target_pos["y"] + 25
                 }
-        
+
         # B. Apply position update (for both offense AND defense)
         if p_id in updates_map:
             new_props["position"] = clamp_to_court(updates_map[p_id])
-        
+
         # C. Update ball position if this is the handler
         if p_id == new_ball_handler:
             final_ball_pos = new_props["position"]
-        
+
         # D. Add to list (ONLY ONCE!)
         updated_players_list.append(new_props)
 
     # Now return the updated state
     return {
-        "players": updated_players_list,  # ✅ Now has 10 players, not 20!
+        "players": updated_players_list,
         "ball_position": final_ball_pos,
         "ball_handler_id": new_ball_handler,
         "current_step_index": next_step_index,

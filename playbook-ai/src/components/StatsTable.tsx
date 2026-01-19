@@ -1,6 +1,6 @@
 import React from 'react';
 
-// הגדרת המבנה של הנתונים שאנחנו מצפים לקבל
+// Define the structure of the data we expect to receive
 interface PlayerStats {
   mp: number;
   pts: number;
@@ -15,8 +15,8 @@ interface PlayerNode {
   data: {
     name: string;
     position: string;
-    side: 'ATTACK' | 'DEFENSE'; // כדי שנוכל להבדיל או לסנן
-    stats?: PlayerStats; // הסטטיסטיקה מגיעה מה-CSV
+    side: 'ATTACK' | 'DEFENSE'; // To distinguish or filter
+    stats?: PlayerStats; // Statistics come from CSV
     color?: string;
   };
 }
@@ -26,9 +26,9 @@ interface StatsTableProps {
 }
 
 export const StatsTable: React.FC<StatsTableProps> = ({ players }) => {
-  // סינון: נציג רק את שחקני ההתקפה בטבלה הראשית (אפשר לשנות להציג את כולם)
-  // כרגע נציג את כולם אבל נמיין לפי קבוצה (התקפה קודם)
-  const sortedPlayers = [...players].sort((a, b) => 
+  // Filter: Display only offensive players in the main table (can be changed to show all)
+  // Currently showing all but sorted by team (offense first)
+  const sortedPlayers = [...players].sort((a, b) =>
     a.data.side === 'ATTACK' ? -1 : 1
   );
 
@@ -85,7 +85,7 @@ export const StatsTable: React.FC<StatsTableProps> = ({ players }) => {
   );
 };
 
-// עיצוב בסגנון Inline (כדי שלא תצטרך קבצי CSS נפרדים כרגע)
+// Inline styling (so you don't need separate CSS files for now)
 const styles: Record<string, React.CSSProperties> = {
   container: {
     width: '100%',

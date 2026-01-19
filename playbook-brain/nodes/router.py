@@ -29,7 +29,7 @@ def router_node(state: AgentState) -> Dict[str, Any]:
 
     print(f"\n🎯 ROUTER NODE | Current State: {current_user_team} vs {current_opp_team}")
 
-    if "pass" in user_message.lower() or "מסור" in user_message:
+    if "pass" in user_message.lower():
         print("🏀 PASS detected!")
         return {"intent": "PASS"}
 

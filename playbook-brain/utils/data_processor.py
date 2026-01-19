@@ -2,17 +2,17 @@ import pandas as pd
 from graph.roster import PlayerProfile
 
 def load_nba_data_from_csv(file_path: str = "nba_stats_cleaned.csv"):
-    # קריאת הקובץ הנקי
+    # Read the cleaned file
     df = pd.read_csv(file_path)
-    
+
     nba_teams = {}
-    
+
     for _, row in df.iterrows():
-        # מניעת חלוקה באפס במידה ושחקן לא שיחק
+        # Prevent division by zero if player didn't play
         gp = row['GP'] if row['GP'] > 0 else 1
-        
-        # חישוב ממוצעים למשחק כי ה-DB הוא Totals
-        # זה קריטי כדי שה-Analyzer יבין מה הכוח האמיתי של השחקן ברגע נתון
+
+        # Calculate per-game averages since the DB contains totals
+        # This is critical so the Analyzer understands the player's true strength at any given moment
         stats = {
             "pts": round(row['PTS'] / gp, 1),
             "ast": round(row['AST'] / gp, 1),
@@ -24,13 +24,13 @@ def load_nba_data_from_csv(file_path: str = "nba_stats_cleaned.csv"):
             "mp": round(row['Min'] / gp, 1)
         }
 
-        # שימוש בלוגיקה לזיהוי עמדה ותכונות
+        # Use logic to identify position and traits
         archetype, skills, ranges, pos = _analyze_player_traits(stats)
-        
-        team_abbr = row['Team'] # השם המדויק מה-CSV הנקי
+
+        team_abbr = row['Team'] # Exact name from the cleaned CSV
         player_name = row['Player']
         player_id = f"{team_abbr.lower()}-{player_name.replace(' ', '-').lower()}"
-        
+
         profile = PlayerProfile(
             id=player_id,
             name=player_name,
@@ -39,27 +39,27 @@ def load_nba_data_from_csv(file_path: str = "nba_stats_cleaned.csv"):
             archetype=archetype,
             shooting_ranges=ranges,
             key_skills=skills,
-            speed=8 if pos == "G" else 6, # גארדים מהירים יותר בסימולציה
+            speed=8 if pos == "G" else 6, # Guards are faster in simulation
             stats=stats
         )
-        
+
         if team_abbr not in nba_teams:
             nba_teams[team_abbr] = []
         nba_teams[team_abbr].append(profile)
-            
+
     return nba_teams
 
 def _analyze_player_traits(stats):
-    """מנוע החוקים שקובע מי השחקן לפי המספרים שלו"""
+    """Rules engine that determines player identity based on their stats"""
     skills = []
     ranges = ["Paint"]
-    
-    # זיהוי קלעי שלשות
+
+    # Identify three-point shooters
     if stats['three_p_pct'] > 36:
         skills.append("3PT Specialist")
         ranges += ["Top3", "Wing3", "Corner3"]
-    
-    # קביעת עמדה וארכיטיפ
+
+    # Determine position and archetype
     if stats['ast'] > 5:
         return "Floor General", skills + ["Playmaking"], ranges + ["Top3"], "G"
     elif stats['trb'] > 8:

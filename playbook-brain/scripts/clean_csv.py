@@ -1,6 +1,6 @@
 import pandas as pd
 
-file_name = 'nba_players.csv'
+file_name = 'data/nba_players.csv'
 df = pd.read_csv(file_name)
 
 # Fix the headers
@@ -10,4 +10,4 @@ df = df.rename(columns={
 })
 
 # Save to new cleaned file
-df.to_csv('nba_stats_cleaned.csv', index=False)
+df.to_csv('data/nba_stats_cleaned.csv', index=False)

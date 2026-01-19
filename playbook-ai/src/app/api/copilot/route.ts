@@ -13,7 +13,7 @@ const serviceAdapter = new ExperimentalEmptyAdapter();
 const runtime = new CopilotRuntime({
   agents: {
     "basketball_coach": new LangGraphAgent({
-      deploymentUrl: "http://127.0.0.1:2024", // process.env.LANGGRAPH_DEPLOYMENT_URL || "http://127.0.0.1:8000",
+      deploymentUrl: process.env.LANGGRAPH_DEPLOYMENT_URL || "http://127.0.0.1:8000",
       graphId: "basketball_coach",
     }) as any, // הוספת ה-'as any' כאן פותרת את השגיאה הארוכה שקיבלת
   }

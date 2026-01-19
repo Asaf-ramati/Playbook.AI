@@ -47,12 +47,12 @@ def route_next_step(state: AgentState):
 
 def should_continue_play(state: AgentState):
     """
-    בדוק אם יש עוד צעדים בתרגיל.
-    אם intent=PLAYBOOK ויש current_step_index > 0, המשך לצעד הבא.
+    Check if there are more steps in the drill.
+    If intent=PLAYBOOK and current_step_index > 0, continue to next step.
     """
     intent = state.get("intent")
     step_index = state.get("current_step_index", 0)
-    
+
     # Continue if we're in playbook mode OR waiting for animation
     if intent in ["PLAYBOOK", "AWAITING_ANIMATION"] and step_index > 0:
         return "executor"  # ✅ Continue to next step

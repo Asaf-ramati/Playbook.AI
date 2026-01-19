@@ -5,28 +5,28 @@ from typing_extensions import TypedDict
 
 class AgentState(TypedDict):
     """
-    ה-State המשותף ל-Python ול-React.
+    The shared State for Python and React.
     """
-    # --- שדות ליבה ---
+    # --- Core fields ---
     messages: Annotated[List[BaseMessage], add_messages]
-    
-    # --- שדות משחק ---
+
+    # --- Game fields ---
     ball_position: Dict[str, float]
     user_team: Optional[str]
     opponent_team: Optional[str]
     setup_complete: bool
-    players: List[dict] 
-    
-    # --- שדות לוגיקה ---
+    players: List[dict]
+
+    # --- Logic fields ---
     analysis: Optional[dict]
     selected_play: Optional[dict]
     current_step_index: Optional[int]
-    
-    # --- שדות ניווט (התיקון כאן) ---
-    should_analyze: Optional[bool] 
+
+    # --- Navigation fields (fix here) ---
+    should_analyze: Optional[bool]
     intent: Optional[str]
-    route_to: Optional[str]  # <--- הוסף את השורה הזו חובה!
+    route_to: Optional[str]  # <--- Add this line (required!)
     target_play: Optional[str]
-    
-    # --- אינטגרציות ---
+
+    # --- Integrations ---
     copilotkit: Optional[dict]

@@ -31,7 +31,7 @@ This project consists of two main components:
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Asaf-ramati/Playbook.AI.git
 cd basketball_coach
 ```
 

@@ -21,27 +21,27 @@ NBA_DATA: Dict[str, List[PlayerProfile]] = {}
 
 def get_team_roster(team_abbr: str) -> List[Dict]:
     """
-    מחזיר את סגל השחקנים לפי קיצור הקבוצה (למשל 'LAL', 'OKC').
-    אם הנתונים טרם נטענו, הוא קורא למעבד הנתונים.
+    Returns the player roster by team abbreviation (e.g., 'LAL', 'OKC').
+    If data hasn't been loaded yet, it calls the data processor.
     """
     global NBA_DATA
     if not NBA_DATA:
-        # טעינה דינמית כדי למנוע Circular Import
+        # Dynamic loading to prevent Circular Import
         from utils.data_processor import load_nba_data_from_csv
-        # וודא שהשם כאן תואם לקובץ הנקי שלך
+        # Make sure the name here matches your cleaned file
         NBA_DATA = load_nba_data_from_csv("nba_stats_cleaned.csv")
-    
+
     return NBA_DATA.get(team_abbr, [])
 
 def get_player_by_id(player_id: str, roster: List[Dict]) -> Optional[Dict]:
-    """שליפת שחקן ספציפי מתוך סגל"""
+    """Retrieve a specific player from the roster"""
     for player in roster:
         if player["id"] == player_id:
             return player
     return None
 
 def load_player_capabilities(player_id: str, team_id: str) -> str:
-    """הצגת יכולות השחקן כטקסט עבור ה-LLM"""
+    """Display player capabilities as text for the LLM"""
     roster = get_team_roster(team_id)
     profile = get_player_by_id(player_id, roster)
     

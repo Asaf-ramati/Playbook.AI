@@ -1,13 +1,13 @@
 """
 NBA Teams Constants & Court Configuration
-קובץ זה מכיל את כל הקבועים של המערכת: קבוצות, קיצורים ומידות מגרש.
+This file contains all system constants: teams, abbreviations, and court dimensions.
 """
 
-# --- הגדרות מגרש (נחוץ ל-Frontend ולחישובי תנועה) ---
+# --- Court dimensions (needed for Frontend and movement calculations) ---
 COURT_WIDTH = 660
 COURT_HEIGHT = 550
 
-# --- רשימת כל קבוצות ה-NBA ---
+# --- List of all NBA teams ---
 NBA_TEAMS = {
     # Eastern Conference - Atlantic Division
     "BOSTON_CELTICS": {"full_name": "Boston Celtics", "abbreviation": "BOS", "city": "Boston", "name": "Celtics"},
@@ -71,31 +71,31 @@ def get_team_color(abbr: str) -> str:
 
 def normalize_team_name(team_input: str) -> str:
     """
-    מנרמל את שם הקבוצה שהמשתמש הזין ומחזיר את השם המלא הרשמי.
+    Normalizes the team name entered by the user and returns the official full name.
     """
     if not team_input:
         raise ValueError("Team name is empty")
-        
+
     team_input_lower = team_input.strip().lower()
 
     for team_data in NBA_TEAMS.values():
-        # בדיקה מול כל הווריאציות האפשריות
-        if (team_data["full_name"].lower() == team_input_lower or 
-            team_data["abbreviation"].lower() == team_input_lower or 
-            team_data["city"].lower() == team_input_lower or 
+        # Check against all possible variations
+        if (team_data["full_name"].lower() == team_input_lower or
+            team_data["abbreviation"].lower() == team_input_lower or
+            team_data["city"].lower() == team_input_lower or
             team_data["name"].lower() == team_input_lower):
             return team_data["full_name"]
-            
-        # בדיקה חכמה להכללה (למשל "Coach of the Lakers" -> ימצא את "Lakers")
+
+        # Smart check for inclusion (e.g., "Coach of the Lakers" -> will find "Lakers")
         if team_data["name"].lower() in team_input_lower:
             return team_data["full_name"]
 
-    # זריקת שגיאה אם לא נמצא - ה-Router יתפוס את זה
+    # Throw error if not found - the Router will catch this
     raise ValueError(f"Team '{team_input}' not found.")
 
 def get_team_abbreviation(team_name: str) -> str:
     """
-    מקבל שם חופשי (למשל 'Lakers') ומחזיר את הקיצור מה-CSV (למשל 'LAL')
+    Receives a free-form name (e.g., 'Lakers') and returns the abbreviation from CSV (e.g., 'LAL')
     """
     try:
         normalized_name = normalize_team_name(team_name)
@@ -103,7 +103,7 @@ def get_team_abbreviation(team_name: str) -> str:
             if team_data["full_name"] == normalized_name:
                 return team_data["abbreviation"]
     except ValueError:
-        # אם לא מצאנו, נחזיר את המחרוזת המקורית מקוצרת (כגיבוי אחרון)
+        # If not found, return the original string abbreviated (as last resort)
         return team_name[:3].upper()
-    
+
     return ""

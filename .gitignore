@@ -79,3 +79,15 @@ venv/
 ENV/
 env/
 .venv
+
+# LangGraph cache files (קבצי זיכרון זמני)
+.langgraph_api/
+*.pckl
+
+# macOS files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Python logs
+*.log
